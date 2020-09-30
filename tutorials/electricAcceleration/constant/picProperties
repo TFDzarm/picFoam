@@ -1,0 +1,81 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  8
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version         2;
+    format          ascii;
+    class           dictionary;
+    location        "constant";
+    object          picProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+SolverSettings
+{
+    typeIdList      ( e );
+    fieldCalculation ( );
+    ChargeDistribution CellAverage;
+    FieldWeigthing  CellAverage;
+    spaceCharge     0;
+    syncVelocityAtBoundary true;
+    checkDebyeLength false;
+    checkPlasmaFrequency false;
+    warnCellTrajectory 0.3;
+}
+
+Diagnostics
+{
+    modelList       ( );
+}
+
+moleculeProperties
+{
+    e
+    {
+        mass            9.109e-31;
+        diameter        5.6358e-15;
+        omega           1;
+        charge          -1.60218e-19;
+        solveMovement   true;
+        nEquivalentParticles 1;
+    }
+    SpeciesRelations
+    {
+        electronTypeId  e;
+    }
+}
+
+BoundaryModels
+{
+    WallReflectionModel SpecularReflection;
+    PatchEventModels
+    {
+        modelList       ( rightBoundary { type TestReaction ; } );
+    }
+    PatchBoundaryModels
+    {
+        modelList       ( "(leftBoundary|rightBoundary)" { type none ; } );
+    }
+}
+
+ParticleMerging none;
+
+MaxwellSolver   none;
+
+ParticlePusher  Boris;
+
+CollisionModels
+{
+    BackgroundGasModel none;
+    ElectronNeutralCollisionModel none;
+    BinaryCollisionModel none;
+    CoulombCollisionModel none;
+}
+
+
+// ************************************************************************* //

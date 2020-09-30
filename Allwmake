@@ -1,0 +1,25 @@
+#!/bin/sh
+cd ${0%/*} || exit 1    # Run from this directory
+
+[ -n "$FOAM_USER_LIBBIN " ] || {
+    echo "Allwmake error: FOAM_USER_LIBBIN not set"
+    echo "    Check the OpenFOAM entries in your dot-files and source them."
+    exit 1
+}
+
+if [ $WM_PROJECT_VERSION -ne 8 ];then
+    echo "OpenFOAM version 8 is required"
+    exit 1
+fi
+
+#mkdir -p $FOAM_RUN/tutorials/picFoam
+#cp -r tutorials/* $FOAM_RUN/tutorial/picFoam
+
+wmake PICMCCFVM
+
+wmake solver/picFoam
+
+wmakeLnInclude preProcess/picInitialise
+wmake preProcess/picInitialise
+
+#------------------------------------------------------------------------------

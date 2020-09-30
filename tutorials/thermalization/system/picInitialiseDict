@@ -1,0 +1,39 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  8
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      picInitialiseDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+electronVolt      true;
+temperature
+{
+    e       20;
+    Ar+     10;
+}
+
+InitializationModel QuasineutralPlasma;
+
+QuasineutralPlasmaCoeffs
+{
+    ionSpecies  Ar+;
+    cellCount 200000;
+    useMaxwellian true;
+}
+
+solveMaxwellEquations false;
+initalizeLeapFrog false;
+initalizeCollisionModels true;
+clearParticles true;
+
+// ************************************************************************* //

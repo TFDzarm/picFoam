@@ -1,0 +1,67 @@
+				xpdp1.inp (https://ptsg.egr.msu.edu)
+No Collision RLC Test
+
+-nsp---nc---nc2p---dt[s]---length[m]--area[m^2]--epsilonr---B[Tesla]---PSI[D]--
+  2   100   1e6    1e-11     0.05       0.000576        1.0       0.0       0.0
+
+-rhoback[C/m^3]---backj[Amp/m^2]---dde--extR[Ohm]---extL[H]---extC[F]---q0[C]-
+     0.0               0.0         0.0    1      4e-2      1e-6       0.0 
+
+-dcramped--source--dc[V|Amp]--ramp[(V|Amp)/s]---ac[V|Amp]---f0[Hz]--theta0[D]-
+   0         v        100          0.0            0.0         0	      0.0     
+
+--secondary--e_collisional--i_collisional---reflux--nfft--n_ave--nsmoothing--ntimestep--
+      0           0               0           0      0       100      0          0
+
+--seec(electrons)--seec(ions)--ion species---Gpressure[Torr]---GTemp[eV]---imp--
+       0.0           0.0	      2	               0            0.0       0
+
+---GAS----psource--nstrt--vol_source--begin_pt--end_pt--ionization_energy
+    2      0        0		0	         0	      0	           0
+
+
+SPECIES 1
+
+----q[C]-------m[Kg]---j0L[Amp/m^2]---j0R[Amp/m^2]----initn[m^-3]----k---
+ -1.602176e-19   9.109e-31     0.              0.        1e15        1
+
+--vx0L[m/s]---vxtL[m/s]--vxcL[m/s]---vxLloader(0=RNDM,1=QS)--
+     0.0       419391.705        0.0          0             
+
+--vx0R[m/s]---vxtR[m/s]--vxcR[m/s]---vxRloader
+     0.0      419391.705        0          0
+
+--v0y[m/s]---vty[m/s]---vyloader---v0z[m/s]---vtz[m/s]--vzloader--
+     0.0      419391.705       0          0.0       419391.705       0
+
+--nbin----Emin[eV]----Emax[ev]---max-np--
+   200       0.0        100.0      500000
+
+-For-Mid-Diagnostic---nbin----Emin[eV]---Emax[eV]----XStart--XFinish--
+                      200       0.0       100.0        .0    .05
+
+ -For-vel_dist---vx_lower--vx_upper--nxbin--vy_lower--vy_upper--nybin--vz_lower--vz_upper--nzbin-
+                   -1.0e6   1.0e6      0      -1.0e6     1.0e6     0      -1.0e6   1.0e6      0
+
+SPECIES 2
+
+----q[C] ------m[Kg]---j0L[Amp/m^2]---j0R[Amp/m^2]----initn[m^-3]----k---
+  1.602176e-19   6.6817894e-26     0.              0.            1e15       1
+
+--vx0L[m/s]---vxtL[m/s]--vxcL[m/s]---vxLloader(0=RNDM,1=QS)--
+     0.0       1548.491393        0.0          0             
+
+--vx0R[m/s]---vxtR[m/s]--vxcR[m/s]---vxRloader
+     0.0      1548.491393        0          0
+
+--v0y[m/s]---vty[m/s]---vyloader---v0z[m/s]---vtz[m/s]--vzloader--
+     0.0      1548.491393       0          0.0       1548.491393       0
+
+--nbin----Emin[eV]----Emax[ev]---max-np--
+    20       0.0        10.0      500000
+
+-For-Mid-Diagnostic---nbin----Emin[eV]---Emax[eV]----XStart--XFinish--
+                      20       0.0       20.0        .0    .05
+
+ -For-vel_dist---vx_lower--vx_upper--nxbin--vy_lower--vy_upper--nybin--vz_lower--vz_upper--nzbin-
+                   -1.0e6   1.0e6      0      -1.0e6     1.0e6     0      -1.0e6   1.0e6      0

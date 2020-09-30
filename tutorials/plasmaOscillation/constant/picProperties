@@ -1,0 +1,112 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  8
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      picProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+SolverSettings
+{
+    typeIdList                      (e Ar+);
+    fieldCalculation                ();
+
+    ChargeDistribution              VolumeWeighting;
+    FieldWeigthing                  VolumeWeighting;
+
+    spaceCharge                     0;
+
+    checkDebyeLength                false;
+    checkPlasmaFrequency            false;
+
+    warnCellTrajectory              0.3;
+}
+
+Diagnostics
+{
+    modelList (KineticEnergy FieldEnergy Temperature);
+
+    KineticEnergyCoeffs
+    {
+        relativistic true;
+    }
+}
+
+moleculeProperties
+{
+    e
+    {
+        mass                            9.10938291e-31;
+        diameter                        5.6358e-15;
+        omega                           0;
+        internalDegreesOfFreedom        3;
+        charge                          -1.602176565e-19;
+        solveMovement                   true;
+        nEquivalentParticles            2.5e7;
+    }
+    Ar+
+    {
+        mass                            6.6817894e-26;
+        diameter                        3.67e-10;
+        omega                           1;
+        charge                          1.602176565e-19;
+        solveMovement                   false;
+        nEquivalentParticles            2.5e7;
+    }
+
+    SpeciesRelations
+    {
+        electronTypeId e;
+    }
+}
+
+
+// BoundaryModels
+// ~~~~~~~~~~~~~~~
+BoundaryModels
+{
+    WallReflectionModel SpecularReflection;
+
+    PatchEventModels
+    {
+        modelList ();
+    }
+
+    PatchBoundaryModels
+    {
+        modelList ();
+    }
+}
+
+// ParticleMerging
+// ~~~~~~~~~~~~~~~
+ParticleMerging             none;
+
+// MaxwellSolver
+// ~~~~~~~~~~~~~~~~~~~~~
+MaxwellSolver                  ElectroStatic;
+
+// ParticlePusher
+// ~~~~~~~~~~~~~~~~~~~~~
+ParticlePusher                 Boris;
+
+// CollisionModels
+// ~~~~~~~~~~~~~~~~~~~~~
+CollisionModels
+{
+    BackgroundGasModel              none;
+    ElectronNeutralCollisionModel   none;
+    BinaryCollisionModel            none;
+    CoulombCollisionModel           none;
+}
+
+// ************************************************************************* //

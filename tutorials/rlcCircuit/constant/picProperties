@@ -1,0 +1,132 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  8
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      picProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+SolverSettings
+{
+    typeIdList                      (e Ar+);
+    fieldCalculation                (Ar+ e);
+
+    ChargeDistribution              VolumeWeighting;
+    FieldWeigthing                  VolumeWeighting;
+
+    spaceCharge                     0;
+
+    checkDebyeLength                false;
+    checkPlasmaFrequency            false;
+
+    warnCellTrajectory              0.5;
+}
+
+Diagnostics
+{
+    modelList (Composition Temperature);
+
+    CompositionCoeffs
+    {
+        printNumberDensity true;
+    }
+}
+
+moleculeProperties
+{
+    e
+    {
+        mass                            9.109e-31;
+        diameter                        5.6358e-15;
+        omega                           1;
+        charge                          -1.602176e-19;
+        solveMovement                   true;
+        nEquivalentParticles            1e6;
+    }
+    Ar+
+    {
+        mass                            6.6817894e-26;
+        diameter                        3.67e-10;
+        omega                           1;
+        charge                          1.602176e-19;
+        solveMovement                   true;
+        nEquivalentParticles            1e6;
+    }
+
+
+    SpeciesRelations
+    {
+        electronTypeId e;
+        species1
+        {
+            neutralTypeId none;
+            ionTypeId Ar+;
+        }
+    }
+}
+
+BoundaryModels
+{
+    WallReflectionModel SpecularReflection;
+
+    PatchEventModels
+    {
+        modelList ();
+    }
+
+    PatchBoundaryModels
+    {
+        modelList
+        (
+            
+            "collector|source"
+            {
+                type           circuitRLC;
+                circuitRLCCoeffs
+                {
+                    EmissionModels ();
+
+                    R 1;
+                    C 1e-6;
+                    L 0.04;
+                    V 100;
+
+                    collector
+                    {
+                        type anode;
+                    }
+                    source
+                    {
+                        type cathode;
+                    }
+                }
+            }
+        );
+    }
+
+    
+}
+
+MaxwellSolver                  ElectroStatic;
+ParticlePusher                 BorisNR;
+
+ParticleMerging                     none;
+CollisionModels
+{
+    BackgroundGasModel              none;
+    ElectronNeutralCollisionModel   none;
+    BinaryCollisionModel            none;
+    CoulombCollisionModel           none;
+}
+
+
+// ************************************************************************* //

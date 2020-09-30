@@ -1,0 +1,31 @@
+/* Parcels */
+parcels/derived/picParcel/picParcel.C
+
+/* Cloud base classes */
+clouds/baseClasses/PICBaseCloud/PICBaseCloud.C
+
+/* Sub-models */
+parcels/derived/picParcel/definePICParcel.C
+
+
+submodels/BoundaryModelData.C
+
+submodels/FieldWeigthing/FieldWeigthing/FieldWeigthing.C
+submodels/FieldWeigthing/CellAverage/CellAverageFW.C
+submodels/FieldWeigthing/VolumeWeighting/VolumeWeightingFW.C
+
+parcels/derived/picParcel/makeBoundaryEventModels.C
+parcels/derived/picParcel/makeCollisionModels.C
+parcels/derived/picParcel/makeWallReflectionModels.C
+parcels/derived/picParcel/makeBoundaryModels.C
+parcels/derived/picParcel/makeMaxwellSolver.C
+parcels/derived/picParcel/makeParticlePusher.C
+parcels/derived/picParcel/makeDiagnostics.C
+parcels/derived/picParcel/makeParticleMerging.C
+
+submodels/BoundaryModel/BoundaryConditions/RLCBoundary/RLCBoundaryFvPatchField.C
+
+/* fixedGradient */
+submodels/BoundaryModel/BoundaryConditions/circuitBoundary/circuitBoundaryFvPatchField.C
+
+LIB = $(FOAM_USER_LIBBIN)/libPICMCC

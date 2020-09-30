@@ -1,0 +1,142 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  8
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      picProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+
+SolverSettings
+{
+    typeIdList                      (e Ar+);
+    fieldCalculation                ();
+    ChargeDistribution              CellAverage;
+    FieldWeigthing                  CellAverage;
+
+    spaceCharge                     0;
+
+    checkDebyeLength                false;
+    checkPlasmaFrequency            false;
+
+    warnCellTrajectory              0.5;
+}
+
+Diagnostics
+{
+    modelList (Temperature);
+}
+
+
+moleculeProperties
+{
+    e
+    {
+        mass                            9.109e-31;
+        diameter                        5.6358e-15;
+        omega                           1;
+        charge                          -1.602176e-19;
+        solveMovement                   true;
+        nEquivalentParticles            400;
+    }
+    Ar+
+    {
+        mass                            9.109e-30;
+        diameter                        3.67e-10;
+        omega                           1;
+        charge                          1.602176e-19;
+        solveMovement                   true;
+        nEquivalentParticles            400;
+    }
+
+    SpeciesRelations
+    {
+        electronTypeId e;
+        species1
+        {
+            neutralTypeId none;
+            ionTypeId Ar+;
+        }
+    }
+}
+
+
+// BoundaryModels
+// ~~~~~~~~~~~~~~~
+BoundaryModels
+{
+    WallReflectionModel SpecularReflection;
+
+    PatchEventModels
+    {
+        modelList ();
+    }
+
+    PatchBoundaryModels
+    {
+        modelList ();
+
+    }
+    
+}
+
+
+// MaxwellSolver
+// ~~~~~~~~~~~~~~~~~~~~~
+MaxwellSolver                  none;
+
+// ParticlePusher
+// ~~~~~~~~~~~~~~~~~~~~~
+ParticlePusher                 Boris;
+
+// CollisionModels
+// ~~~~~~~~~~~~~~~~~~~~~
+CollisionModels
+{
+    BackgroundGasModel              none;
+    ElectronNeutralCollisionModel   none;
+    BinaryCollisionModel            none;
+
+    CoulombCollisionModel           Perez;
+    CoulombCollisionCoeffs
+    {
+        pairingAlgorithm            NanbuYonemura;
+        WeightCorrection            none;
+        IonizationModel             none;
+
+        allowIntraCollision true;
+        Collisions
+        {
+            pair1
+            {
+                collisionPartner (e e);
+                coulombLog 15;
+            }
+            pair2
+            {
+                collisionPartner (Ar+ Ar+);
+                coulombLog 15;
+            }
+            pair3
+            {
+                collisionPartner (Ar+ e);
+                coulombLog 15;
+            }
+        };
+    }
+}
+
+// ParticleMerging
+// ~~~~~~~~~~~~~~~~~~~~~
+ParticleMerging             none;
+
+// ************************************************************************* //
