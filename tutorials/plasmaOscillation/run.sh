@@ -7,10 +7,12 @@ cd ${0%/*} || exit 1    # Run from this directory
 # Set application name
 application=$(getApplication)
 
-gmsh -3 Mesh3D.geo
-gmshToFoam Mesh3D.msh
+#gmsh -3 Mesh3D.geo
+#gmshToFoam Mesh3D.msh
+#changeDictionary
 
-changeDictionary
+blockMesh
+
 picInitialise
 
 decomposePar

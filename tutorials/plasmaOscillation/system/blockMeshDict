@@ -1,0 +1,114 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  8
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      blockMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+convertToMeters 0.1;
+
+vertices
+(
+    (0 4 4)
+    (0 -4 4)
+    (0 -4 -4)
+    (0 4 -4)
+    (60 4 4)
+    (60 -4 4)
+    (60 -4 -4)
+    (60 4 -4)
+);
+
+blocks
+(
+    hex (0 1 2 3 4 5 6 7) (16 16 120) simpleGrading (1 1 1)
+);
+
+edges
+(
+);
+
+boundary
+(
+    leftBoundary
+    {
+        type cyclic;
+        neighbourPatch rightBoundary;
+        matchTolerance  0.0001;
+        transform       unspecified;
+        faces
+        (
+            (3 0 2 1)
+        );
+    }
+    rightBoundary
+    {
+        type cyclic;
+        neighbourPatch leftBoundary;
+        matchTolerance  0.0001;
+        transform       unspecified;
+        faces
+        (
+            (4 5 6 7)
+        );
+    }
+    upperBoundary
+    {
+        type cyclic;
+        neighbourPatch lowerBoundary;
+        matchTolerance  0.0001;
+        transform       unspecified;
+        faces
+        (
+            (3 0 4 7)
+        );
+    }
+    lowerBoundary
+    {
+        type cyclic;
+        neighbourPatch upperBoundary;
+        matchTolerance  0.0001;
+        transform       unspecified;
+        faces
+        (
+            (6 5 1 2)
+        );
+    }
+    frontBoundary
+    {
+        type cyclic;
+        neighbourPatch backBoundary;
+        matchTolerance  0.0001;
+        transform       unspecified;
+        faces
+        (
+            (0 1 5 4)
+        );
+    }
+    backBoundary
+    {
+        type cyclic;
+        neighbourPatch frontBoundary;
+        matchTolerance  0.0001;
+        transform       unspecified;
+        faces
+        (
+            (7 6 2 3)
+        );
+    }
+);
+
+mergePatchPairs
+(
+);
+
+// ************************************************************************* //

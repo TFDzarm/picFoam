@@ -111,10 +111,9 @@ CollisionModels
     {
         pairingAlgorithm            NanbuYonemura;
         WeightCorrection            none;
-        IonizationModel             none;
 
         allowIntraCollision true;
-        Collisions
+        Collisions//optional
         {
             pair1
             {
@@ -132,6 +131,26 @@ CollisionModels
                 coulombLog 15;
             }
         };
+
+        //Here as an example
+        IonizationModel             none;//Perez
+        PerezIonizationCoeffs
+        {
+            Ar_Coeffs
+            {
+                ionSpecies Ar+;
+                ionizationLimit 5;//optional
+                atomicNumber    18;
+                bindingEnergy                   (3206.2 3206.2 //1s
+                                                 324.2 324.2 //2s
+                                                 247.74 247.74 247.74 247.74 247.74 247.74 //2p
+                                                 29.24 29.24 //3s
+                                                 15.76 15.76 15.76 15.76 15.76 15.76);//3p
+
+                ionizationEnergy                 (15.7596117 27.62967 40.735 59.58 74.84 91.29 124.41 143.4567 
+                                                        422.6 479.76 540.4 619.0 685.5 755.13 855.5 918.375 4120.6656 4426.2228);
+            }
+        }
     }
 }
 
