@@ -103,6 +103,7 @@ void Foam::PICParcel<ParcelType>::moveForward
         cloud.printVelocityWarning() = false;
     }
 
+    label resyncCount = 0;
     while (td.keepParticle && !td.switchProcessor && p.stepFraction() < 1)
     {
         Utracking = U_;
@@ -120,6 +121,12 @@ void Foam::PICParcel<ParcelType>::moveForward
 
         if(td.requireResync() && td.keepParticle)
         {
+            resyncCount++;
+            if(resyncCount > 1) { //Rarely happens...
+                Pout << "WARNING parcel seems to be stuck... do not sync" << endl;
+                td.requireResync() = false;
+                continue;
+            }
             //Sync velocity back after reflection
             syncVelocityAtBoundary(cloud, 0.5-p.stepFraction());
             td.requireResync() = false;
