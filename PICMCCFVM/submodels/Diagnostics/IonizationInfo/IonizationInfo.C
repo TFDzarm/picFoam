@@ -38,22 +38,14 @@ Foam::IonizationInfo<CloudType>::IonizationInfo
     DiagnosticInfo<CloudType>(dict,cloud,typeName),
     ionizationStates_(cloud.typeIdList().size())
 {
-    if(!this->coeffDict().empty())
+    //Check up to which limit we print info
+    forAll(cloud.ionSpecies(), i)
     {
-        forAllConstIter(IDLList<entry>, this->coeffDict(), iter)
-        {
-            if(iter().isDict())
-            {
-                const dictionary& subDict = iter().dict();
-                word species = subDict.lookup("ionSpecies");
-                label idIon = findIndex(cloud.typeIdList(),species);
-                if(idIon == -1)
-                    FatalErrorInFunction << "ionSpecies " << species << " is not defined" << abort(FatalError);
+        label typeId = cloud.ionSpecies()[i];
+        const dictionary& subDict = this->coeffDict().subDict(cloud.typeIdList()[typeId]);//Get a subdict with the species name
 
-                label ionLimit = readLabel(subDict.lookup("ionizationLimit"));
-                ionizationStates_[idIon].resize(ionLimit,0);
-            }
-        }
+        label ionLimit = readLabel(subDict.lookup("ionizationLimit"));
+        ionizationStates_[typeId].resize(ionLimit,0);
     }
 }
 
@@ -77,6 +69,7 @@ Foam::IonizationInfo<CloudType>::~IonizationInfo()
 template<class CloudType>
 void Foam::IonizationInfo<CloudType>::gatherDiagnostic(const typename CloudType::parcelType& p)
 {
+    //If in the limit count the particle
     if(ionizationStates_[p.typeId()].size() >= p.Zstar())
     {
         ionizationStates_[p.typeId()][p.Zstar()-1]++;
@@ -89,20 +82,24 @@ void Foam::IonizationInfo<CloudType>::info()
 {
     const CloudType& cloud(this->owner());
 
-    forAll(cloud.typeIdList(),id)
+    forAll(cloud.ionSpecies(),i)
     {
-        if(cloud.ionTypeIdList()[id] > -1)
+        label typeId = cloud.ionSpecies()[i];
+    
+        //Parallel COM the list for the current species
+        Pstream::listCombineGather(ionizationStates_[typeId],plusEqOp<label>());
+
+        //Print the info
+        word speciesName = cloud.typeIdList()[typeId];
+        Info << "    Ionization states of " << speciesName << ":" << nl;
+
+        forAll(ionizationStates_[typeId],stateI)
         {
-            word speciesName = cloud.typeIdList()[id];
-            Info << "    Ionization states of " << speciesName << ":" << nl;
-            forAll(ionizationStates_[id],state)
-            {
-                label count = ionizationStates_[id][state];
-                if(count > 0)
-                    Info << "    " << state+1 << ": " << count << nl;
-            }
-            Info << nl;
+            label count = ionizationStates_[typeId][stateI];
+            if(count > 0)
+                Info << "    " << stateI+1 << ": " << count << nl;
         }
+        Info << nl;
     }
 
     //Reset list
@@ -113,3 +110,4 @@ void Foam::IonizationInfo<CloudType>::info()
 }
 
 // ************************************************************************* //
+
