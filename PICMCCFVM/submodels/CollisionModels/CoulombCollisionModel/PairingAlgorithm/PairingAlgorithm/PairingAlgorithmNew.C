@@ -27,6 +27,7 @@ License
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+//Construct the model and return a smart pointer
 template<class CloudType>
 Foam::autoPtr<Foam::PairingAlgorithm<CloudType>>
 Foam::PairingAlgorithm<CloudType>::New
@@ -37,13 +38,14 @@ Foam::PairingAlgorithm<CloudType>::New
 	
 )
 {
-    const word modelType(dict.lookup("pairingAlgorithm"));
+    const word modelType(dict.lookup("pairingAlgorithm"));//Lookup the selected model name
 
     Info<< "|->    Selecting PairingAlgorithm " << modelType << endl;
 
     typename dictionaryConstructorTable::iterator cstrIter =
         dictionaryConstructorTablePtr_->find(modelType);
 
+    //Unkown model...
     if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
         FatalErrorInFunction

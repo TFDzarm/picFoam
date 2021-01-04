@@ -43,6 +43,7 @@ Foam::ThermionicEmission<CloudType>::ThermionicEmission
     nParticle_(this->coeffDict().lookupOrDefault("nParticle",-1.0)),
     pRemainder_(0.0)
 {
+    //Calculate the current density for the given temperature
     const scalar& electronTypeId(cloud.electronTypeId());
     const scalar& electronMagCharge = mag(cloud.constProps(electronTypeId).charge());
     j_ = lambdaR_*A0_*Tbc_*Tbc_*exp(-fnW_*electronMagCharge/(Tbc_*constant::physicoChemical::k.value()));
@@ -68,7 +69,7 @@ void Foam::ThermionicEmission<CloudType>::emission()
 
     const scalar& electronTypeId(cloud.electronTypeId());
     scalar electronNequiv;
-    if(nParticle_ > 0.0)
+    if(nParticle_ > 0.0)//If we specified the weight assign it
         electronNequiv = nParticle_;
     else
         electronNequiv = cloud.constProps(electronTypeId).nParticle();
@@ -77,6 +78,7 @@ void Foam::ThermionicEmission<CloudType>::emission()
 
     scalar dt = mesh.time().deltaTValue();
 
+    //Calculate number of particles to be emitted
     scalar nEmission = j_*this->patchArea()*dt/(electronNequiv*electronMagCharge) + pRemainder_;
     label nEmit = label(nEmission);
     pRemainder_ = nEmission-scalar(nEmit);

@@ -71,8 +71,9 @@ void Foam::KineticEnergyInfo<CloudType>::gatherDiagnostic(const typename CloudTy
     const CloudType& cloud(this->owner());
     const typename CloudType::parcelType::constantProperties& cP = cloud.constProps(p.typeId());
 
+    //Calculate the kinetic energy classical or relativistic
     if(relativistic_) {
-        scalar gamma = 1.0/sqrt(1.0-sqr(mag(p.U())/constant::universal::c.value()));
+        scalar gamma = 1.0/sqrt(1.0-sqr(mag(p.U())/constant::universal::c.value()));//Lorentz factor
         kineticEnergyofTypes_[p.typeId()] += (gamma-1.0)*cP.mass()*constant::universal::c.value()*constant::universal::c.value();
     }
     else {
@@ -86,10 +87,12 @@ void Foam::KineticEnergyInfo<CloudType>::info()
 {
     const CloudType& cloud(this->owner());
 
+    //Parallel COM
     scalar linearKineticEnergy = cloud.linearKineticEnergyOfSystem();
     reduce(linearKineticEnergy, sumOp<scalar>());
     Pstream::listCombineGather(kineticEnergyofTypes_, plusEqOp<scalar>());
 
+    //Print the info
     Info << "    Total linear kinetic energy     = "
          << linearKineticEnergy << " J == " << linearKineticEnergy/constant::electromagnetic::e.value() << " eV" << nl;
     forAll(cloud.typeIdList(),id)

@@ -79,6 +79,7 @@ void Foam::PerezRelativisticCollision<CloudType>::collide
 
     scalar deltaT = cloud.mesh().time().deltaTValue();
 
+    //Get particle properties
     label idP = parcelP->typeId();
     scalar massP = cloud.constProps(idP).mass();
     scalar chargeP = parcelP->charge();
@@ -87,12 +88,15 @@ void Foam::PerezRelativisticCollision<CloudType>::collide
     scalar massQ = cloud.constProps(idQ).mass();
     scalar chargeQ = parcelQ->charge();
 
+    //Calculate the Lorentz factors
     scalar gammaP = 1.0/sqrt(1.0-sqr(mag(UP)/cu::c.value()));
     scalar gammaQ = 1.0/sqrt(1.0-sqr(mag(UQ)/cu::c.value()));
 
+    //Relativistic momentum
     vector pP = massP*gammaP*UP;
     vector pQ = massQ*gammaQ*UQ;
 
+    //Relative velocity
     vector vc_r = (pP + pQ) / (massP*gammaP+massQ*gammaQ);
     scalar magSqr_vcr = vc_r&vc_r;
 
@@ -107,6 +111,7 @@ void Foam::PerezRelativisticCollision<CloudType>::collide
         gammaQ_CoM = gammaQ;
     }
     else {
+        //Transformation to the CoM frame of reference
         gamma_c = 1.0/sqrt( 1.0 - magSqr_vcr/sqr(cu::c.value()));
         gammac_SrqVcr = ((gamma_c -1.0)/magSqr_vcr);
 
@@ -116,14 +121,16 @@ void Foam::PerezRelativisticCollision<CloudType>::collide
         gammaQ_CoM = (1.0-(vc_r&UQ)/sqr(cu::c.value()))*gammaQ*gamma_c;
     }
     scalar mag_pP_CoM = mag(pP_CoM);
-    if(mag_pP_CoM == 0.0)//okay?
+    if(mag_pP_CoM == 0.0)//Happens for some reason catch this...
         return;
 
+    //Calculate or get the coulomb log
     scalar coulombLog;
     if(this->coulombLog_[idP][idQ] == 0.0) {
+        //Impact parameter
         scalar b0 = chargeP*chargeQ/(4.0*cm::pi*ce::epsilon0.value()*sqr(cu::c.value()))*gamma_c/(massP*gammaP+massQ*gammaQ)*(1.0+massP*gammaP_CoM*massQ*gammaQ_CoM*sqr(cu::c.value())/sqr(mag_pP_CoM));
 
-        scalar b_min = max(constant::universal::h.value()/(2*mag_pP_CoM),mag(b0));
+        scalar b_min = max(constant::universal::h.value()/(2*mag_pP_CoM),mag(b0));//choose minimum: de-Broglie wavelength or b0
 
         coulombLog = max(2.0,0.5*log(1.0+sqr(debyeLength)/sqr(b_min)));//FIXME: Performance !!!! this one only needs to calculated per cell -> move me !!!
     }
@@ -142,6 +149,7 @@ void Foam::PerezRelativisticCollision<CloudType>::collide
     scalar s_max = pow(4.0*cm::pi/3.0,1.0/3.0) * (nP*nQ/nPQ)*deltaT*(massP+massQ)/max(massP*pow(nP,2.0/3.0),massQ*pow(nQ,2.0/3.0)) * v_rel;//max(mass1*::pow(n1,2.0/3.0),mass2*::pow(n2,2.0/3.0))
     s = min(s_max,s);
 
+    //Scattering angles
     scalar cosChi = calculate_cosChi(s);
     scalar sinChi = sqrt( 1.0 - cosChi*cosChi );
     scalar eps = 2.0*cm::pi*cloud.rndGen().scalar01();
@@ -149,6 +157,7 @@ void Foam::PerezRelativisticCollision<CloudType>::collide
     scalar sinCcosE = sinChi*cos(eps);
     scalar sinCsinE = sinChi*sin(eps);
 
+    //Perform the collision in the CoM frame
     vector new_pP_CoM;
     scalar p_perp = sqrt(pP_CoM.x()*pP_CoM.x() + pP_CoM.y()*pP_CoM.y());
     if( p_perp > 1.e-10*mag_pP_CoM ) {
@@ -161,6 +170,7 @@ void Foam::PerezRelativisticCollision<CloudType>::collide
     {
         new_pP_CoM = vector(mag_pP_CoM*sinCcosE,mag_pP_CoM*sinCsinE,mag_pP_CoM*cosChi);
     }
+    //Update the particles velocities
     vector new_pP = new_pP_CoM + vc_r*(gammac_SrqVcr*(vc_r&new_pP_CoM)+massP*gammaP_CoM*gamma_c);
     scalar new_gammaP = sqrt(1.0+sqr(mag(new_pP)/(massP*cu::c.value())));
 
@@ -173,7 +183,7 @@ void Foam::PerezRelativisticCollision<CloudType>::collide
     UP = new_pP/(massP*new_gammaP);
     UQ = new_pQ/(massQ*new_gammaQ);
 
-    this->weightCorrection().correctVelocity(parcelP,parcelQ,preUP,preUQ);
+    this->weightCorrection().correctVelocity(parcelP,parcelQ,preUP,preUQ);//Weight correction
 }
 
 template<class CloudType>

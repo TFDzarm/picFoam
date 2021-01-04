@@ -69,6 +69,7 @@ Foam::TemperatureInfo<CloudType>::~TemperatureInfo()
 template<class CloudType>
 void Foam::TemperatureInfo<CloudType>::gatherDiagnostic(const typename CloudType::parcelType& p)
 {
+    //Calculate all required properties
     vSqr_[p.typeId()] += (p.U()& p.U())*p.nParticle();
     vDrift_[p.typeId()] += p.U()*p.nParticle();
     nParticleTypes_[p.typeId()] += p.nParticle();
@@ -82,22 +83,30 @@ void Foam::TemperatureInfo<CloudType>::info()
     const CloudType& cloud(this->owner());
     reduce(nMoles_, sumOp<scalar>());
 
+    //Kinetic energy of the system
     scalar linearKineticEnergy = cloud.linearKineticEnergyOfSystem();
+    
+    //Parallel COM the properties
     reduce(linearKineticEnergy, sumOp<scalar>());
     Pstream::listCombineGather(vSqr_, plusEqOp<scalar>());
     Pstream::listCombineGather(vDrift_, plusEqOp<vector>());
     Pstream::listCombineGather(nParticleTypes_,plusEqOp<scalar>());
 
+    //Average temperature over all species includes drift...
     Info << "    Average Temperature             = "
          << 2.0*linearKineticEnergy/(3.0*nMoles_*constant::physicoChemical::k.value()) << " K => " << 2.0*linearKineticEnergy/(3.0*nMoles_*constant::electromagnetic::e.value()) << " eV" << nl;
+    
+    //Info on every species ... only includes drift if chosen   
     forAll(cloud.typeIdList(),id)
     {
         if(nParticleTypes_[id] > 0)
         {
             vector vDrift = vDrift_[id]/nParticleTypes_[id];
-            scalar vDrift2 = 0;
-            if(accountForDrift_)
+            scalar vDrift2 = 0;//default
+
+            if(accountForDrift_)//Do we add the drift velocity?
                 vDrift2 = (vDrift&vDrift);
+
             scalar temperatur = cloud.constProps(id).mass()/(3.0*constant::physicoChemical::k.value())*(vSqr_[id]/nParticleTypes_[id] - vDrift2);
             Info << "    [" << cloud.typeIdList()[id] << "]                             = " << temperatur << " K == " << temperatur*constant::physicoChemical::k.value()/constant::electromagnetic::e.value() << " eV" << nl;
 

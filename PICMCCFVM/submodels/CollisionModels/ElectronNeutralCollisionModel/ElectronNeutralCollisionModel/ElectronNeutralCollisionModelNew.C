@@ -27,6 +27,10 @@ License
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+/*
+Foam::ElectronNeutralCollisionModel<CloudType>::New
+Create the model and return a smart pointer
+*/
 template<class CloudType>
 Foam::autoPtr<Foam::ElectronNeutralCollisionModel<CloudType>>
 Foam::ElectronNeutralCollisionModel<CloudType>::New
@@ -35,13 +39,14 @@ Foam::ElectronNeutralCollisionModel<CloudType>::New
     CloudType& owner
 )
 {
-    const word modelType(dict.lookup("ElectronNeutralCollisionModel"));
+    const word modelType(dict.lookup("ElectronNeutralCollisionModel"));//Lookup the selection
 
     Info<< "+ Selecting ElectronNeutralCollisionModel " << modelType << endl;
 
     typename dictionaryConstructorTable::iterator cstrIter =
         dictionaryConstructorTablePtr_->find(modelType);
 
+    //Unknown model, print all known
     if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
         FatalErrorInFunction

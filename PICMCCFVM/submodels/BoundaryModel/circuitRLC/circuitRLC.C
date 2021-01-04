@@ -96,7 +96,7 @@ Foam::circuitRLC<CloudType>::circuitRLC
     interactionList_.setSize(nPatches,etNone);
 
     volScalarField& phiE = cloud.elpotentialField();
-    //Check patches
+    //Check patches and read the default values
     forAll(associatedPatches, i)
     {
         label patchId = associatedPatches[i];
@@ -115,26 +115,30 @@ Foam::circuitRLC<CloudType>::circuitRLC
                 interactionList_[patchId] = etAnode;
                 anodePatch_ = patchId;
 
+                //The anode patch has to be of type fixedValue
                 if(!isA<fixedValueFvPatchField<scalar>>(phiE.boundaryField()[patchId]))
                     FatalErrorInFunction << "Expected fixedValue boundary condition for field " << phiE.name() << " on patch " << patch.name() << nl << abort(FatalError);
 
             }
             else if(type == "cathode")
             {
+                //Initialize all EmissionModels
                 emissionList_.initilizeAll(patchId,ParticleEmitter<CloudType>::vmMaxwellianFlux);
 
                 interactionList_[patchId] = etCathode;
 
                 cathodePatch_ = patchId;
 
-
+                //The cathode has to be a RLCBoundary
                 if(!isA<RLCBoundaryFvPatchField>(phiE.boundaryField()[patchId]))
                     FatalErrorInFunction << "Expected RLCBoundary boundary condition for field " << phiE.name() << " on patch " << patch.name() << nl << abort(FatalError);
 
+                //Calculate patch area
                 const scalarField magSf(mag(patch.faceAreas()));
                 cathodeArea_ = sum(magSf);
                 reduce(cathodeArea_, sumOp<scalar>());
 
+                //Get values for Qex-Qex3 saved in the boundary file
                 boundaryCondition_ = &(refCast<RLCBoundaryFvPatchField>(phiE.boundaryFieldRef()[patchId]));
                 Qex_ = boundaryCondition_->Q();
                 Qex1_ = boundaryCondition_->Q1();
@@ -170,6 +174,7 @@ Foam::circuitRLC<CloudType>::~circuitRLC()
 template<class CloudType>
 void Foam::circuitRLC<CloudType>::preUpdate_Boundary()
 {
+    //Update coeff2 used in boundary condition to calculate the surface potential
     reduce(chargeAccumulator_, sumOp<scalar>());
 
     k_ = a1_*Qex_+a2_*Qex1_+a3_*Qex2_+a4_*Qex3_;
@@ -180,7 +185,7 @@ void Foam::circuitRLC<CloudType>::preUpdate_Boundary()
 template<class CloudType>
 void Foam::circuitRLC<CloudType>::postUpdate_Boundary()
 {
-
+    //Fields have been solved now update Qex - Qex3
     CloudType& cloud(this->owner());
     const polyMesh& mesh(cloud.mesh());
 
@@ -210,27 +215,36 @@ void Foam::circuitRLC<CloudType>::postUpdate_Boundary()
     Qex1_ = Qex_;
     Qex_ = (source()-phiBound)/a0_-k_;
 
+    //Current measured in the circuit
     Iex_ = (Qex_-Qex1_)/dt;
+
+    //Surface charge
     sigma1_ += (chargeAccumulator_+Iex_*dt)/cathodeArea_;
 
+    //Update values in the boundary
     boundaryCondition_->Q() = Qex_;
     boundaryCondition_->Q1() = Qex1_;
     boundaryCondition_->Q2() = Qex2_;
     boundaryCondition_->Q3() = Qex3_;
     boundaryCondition_->sigma() = sigma1_;
 
+    //Clear the accumulator
     chargeAccumulator_ = 0.0;
 
-    //sanity check
+    //debug: sanity check
     //scalar check = L_*(2.0*Qex_-5.0*Qex1_+4.0*Qex2_-Qex3_)/dt/dt+R_*(3.0*Qex_-4.0*Qex1_+Qex2_)/(2.0*dt);
     //Info << "circ: " << check << " == " << V_-(*boundaryCondition_)[0] << endl;
 
     Info << "[" << typeName << "] voltage: " << phiBound << " V current: " << Iex_ << " A" << endl;
 }
 
+/*
+Foam::circuitRLC<CloudType>::injection called in evolve function
+*/
 template<class CloudType>
 void Foam::circuitRLC<CloudType>::injection()
 {
+    //Tell EmissionModels to inject particles
     emissionList_.emission();
 }
 
@@ -238,6 +252,7 @@ void Foam::circuitRLC<CloudType>::injection()
 template<class CloudType>
 void Foam::circuitRLC<CloudType>::particleEjection(typename CloudType::parcelType& p, label patchId)
 {
+    //Have we ejected a charged particle? Subtract the charge...
     if(interactionList_[patchId] == etCathode)
     {
         scalar Q = p.charge()*p.nParticle();
@@ -253,6 +268,7 @@ bool Foam::circuitRLC<CloudType>::particleBC(typename CloudType::parcelType& p, 
     label patchId = p.patch();
     const scalar charge = p.nParticle()*p.charge();
 
+    //Did a charged particle hit the boundary? Add the charge... Else reflect...
     if(charge != 0.0)
     {
         if(interactionList_[patchId] == etCathode)
@@ -263,6 +279,7 @@ bool Foam::circuitRLC<CloudType>::particleBC(typename CloudType::parcelType& p, 
         p.wallReflection(cloud, td);
     }
 
+    //Check EmissionModels
     if(interactionList_[patchId] == etCathode)
         emissionList_.collisionalEmission(p,td);
 

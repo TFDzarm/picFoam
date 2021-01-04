@@ -68,6 +68,7 @@ const Foam::dictionary& Foam::BoundaryModelData::modelDict() const
 
 // * * * * * * * * * * * * * * * IOstream Operators  * * * * * * * * * * * * //
 
+//Stream operator for BoundaryModelData
 Foam::Istream& Foam::operator>>
 (
     Istream& is,

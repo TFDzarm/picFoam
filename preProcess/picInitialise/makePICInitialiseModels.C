@@ -43,7 +43,7 @@ namespace Foam
 
     makeInitializationModel(CloudType);
 
-    // Add instances of inflow boundary model to the table
+    // Add instances of the initialization model to the table
     makeInitializationModelType(IsotropizationInitialization, CloudType);
     makeInitializationModelType(EquipartitionInitialization, CloudType);
     makeInitializationModelType(QuasineutralPlasmaInitialization, CloudType);

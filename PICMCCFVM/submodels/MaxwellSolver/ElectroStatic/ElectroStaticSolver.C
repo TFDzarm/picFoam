@@ -57,12 +57,14 @@ void Foam::ElectroStaticSolver<CloudType>::solveFields()
     volScalarField& phiE(cloud.elpotentialField());
     volScalarField& rhoCharge(cloud.rhoCharge());
 
+    //Solve the electrostatic poisson equation
     solve
     (
         fvm::laplacian(phiE) + rhoCharge/constant::electromagnetic::epsilon0
     );
     phiE.correctBoundaryConditions();
 
+    //Update the electric field
     E = -fvc::grad(phiE);
     E.correctBoundaryConditions();
     cloud.eFieldWeighting().update();//FieldWeighting

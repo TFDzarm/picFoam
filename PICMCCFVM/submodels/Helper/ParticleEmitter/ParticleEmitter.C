@@ -55,6 +55,7 @@ void Foam::ParticleEmitter<CloudType>::initilizeParticleEmitter(label patchId, V
     patchId_ = patchId;
     velocityModel_ = model;
 
+    //Select the chosen model
     switch(model)
     {
         case vmBirdMaxwellianFlux:
@@ -232,10 +233,11 @@ typename CloudType::parcelType* Foam::ParticleEmitter<CloudType>::emitParticleEx
     vector t2 = n^t1;
     t2 /= mag(t2);
 
-
+    //Sample the velocity from the model
     vector U = (this->*getVelocity_)(n, t1, t2, temperature, typeId);
 
-    meshTools::constrainDirection(mesh, mesh.solutionD(), position);
+    //Create the particle
+    meshTools::constrainDirection(mesh, mesh.solutionD(), position);//2D and 1D constrains
     typename CloudType::parcelType* p = cloud_.addNewParcel
                 (
                      position,
@@ -247,9 +249,10 @@ typename CloudType::parcelType* Foam::ParticleEmitter<CloudType>::emitParticleEx
         p->nParticle() = nParticle;
 
     p->syncVelocityAtBoundary(cloud_, stepFraction-0.5);
-    //move new particle only rest if timestep
+    //move new particle only rest of the timestep
     p->stepFraction() = stepFraction;
 
+    //Inform all model of the new particle
     cloud_.boundaryModels().onEjection(*p,patchId_);
     cloud_.boundaryEventModels().onEjection(*p,patchId_);
     return p;
@@ -376,11 +379,12 @@ typename CloudType::parcelType* Foam::ParticleEmitter<CloudType>::emitParticle(s
             vector t2 = n^t1;
             t2 /= mag(t2);
 
-
+            //Sample the velocity from the model
             vector U = (this->*getVelocity_)(n, t1, t2, temperature, typeId);
 
 
-            meshTools::constrainDirection(mesh, mesh.solutionD(), position);
+            //Create the particle
+            meshTools::constrainDirection(mesh, mesh.solutionD(), position);//2D and 1D constrains
             typename CloudType::parcelType* p = cloud_.addNewParcel
                         (
                              position,
@@ -393,6 +397,8 @@ typename CloudType::parcelType* Foam::ParticleEmitter<CloudType>::emitParticle(s
 
             //Sync Particle if requierd and update boundary models!
             p->syncVelocityAtBoundary(cloud_, -0.5);
+
+            //Inform all models about the new particle
             cloud_.boundaryModels().onEjection(*p,patchId_);
             cloud_.boundaryEventModels().onEjection(*p,patchId_);
             return p;
@@ -404,9 +410,10 @@ typename CloudType::parcelType* Foam::ParticleEmitter<CloudType>::emitParticle(s
 template<class CloudType>
 Foam::vector Foam::ParticleEmitter<CloudType>::getVelocity(const vector& normal, const vector& tangent1, const vector& tangent2, scalar temperature, label typeId)
 {
-    return (this->*getVelocity_)(normal, tangent1, tangent2, temperature, typeId);
+    return (this->*getVelocity_)(normal, tangent1, tangent2, temperature, typeId);//Call the function
 }
 
+//BirdMaxwellianFlux
 template<class CloudType>
 Foam::vector Foam::ParticleEmitter<CloudType>::getVelocity0(const vector& normal, const vector& tangent1, const vector& tangent2, scalar temperature, label typeId)
 {
@@ -450,6 +457,7 @@ Foam::vector Foam::ParticleEmitter<CloudType>::getVelocity0(const vector& normal
     return U;
 }
 
+//MostProbableSpeed
 template<class CloudType>
 Foam::vector Foam::ParticleEmitter<CloudType>::getVelocity1(const vector& normal, const vector& tangent1, const vector& tangent2, scalar temperature, label typeId)
 {
@@ -469,7 +477,7 @@ Foam::vector Foam::ParticleEmitter<CloudType>::getVelocity1(const vector& normal
     return U;
 }
 
-
+//HalfMaxwellianFlux
 template<class CloudType>
 Foam::vector Foam::ParticleEmitter<CloudType>::getVelocity2(const vector& normal, const vector& tangent1, const vector& tangent2, scalar temperature, label typeId)
 {
@@ -488,6 +496,7 @@ Foam::vector Foam::ParticleEmitter<CloudType>::getVelocity2(const vector& normal
 
 }
 
+//MaxwellianFlux
 template<class CloudType>
 Foam::vector Foam::ParticleEmitter<CloudType>::getVelocity3(const vector& normal, const vector& tangent1, const vector& tangent2, scalar temperature, label typeId)
 {
@@ -495,6 +504,7 @@ Foam::vector Foam::ParticleEmitter<CloudType>::getVelocity3(const vector& normal
 
     scalar mass = cloud_.constProps(typeId).mass();
 
+    //thermal velocity
     scalar vt = sqrt(constant::physicoChemical::k.value()*temperature/mass);
 
     vector rndOrthogonalU = vt

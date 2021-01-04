@@ -33,7 +33,7 @@ Foam::ChargeDistribution<CloudType>::ChargeDistribution(const word& fieldName, C
     dict_(dictionary::null),
     cloud_(owner),
     coeffDict_(dictionary::null),
-    field_(
+    field_(//Create the charge density field
         IOobject
         (
             fieldName,
@@ -59,7 +59,7 @@ Foam::ChargeDistribution<CloudType>::ChargeDistribution
     dict_(dict),
     cloud_(owner),
     coeffDict_(dict.subDict(type + "Coeffs")),
-    field_(
+    field_(//Create the charge density field
         IOobject
         (
             fieldName,

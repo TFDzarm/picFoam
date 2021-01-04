@@ -168,8 +168,8 @@ public:
             inline bool& requireResync();
 
     private:
-            vector boundaryVelocity_;//synced or unsynced
-            bool requireResync_;
+            vector boundaryVelocity_;//synced or unsynced velocity set at before the boundary interaction e.g. specular reflection 
+            bool requireResync_;//If we sync the velocity, it is required to offset velocity and position correctly after the boundary collision
     };
 
 
@@ -292,13 +292,13 @@ public:
             //- Return access to velocity
             inline vector& U();
 
-            //-NEW- Return access to the charge multiplier
+            //- Return access to the charge multiplier
             inline label& chargeModifier();
 
-            //-NEW- Return access to the charge of the parcel
+            //- Return access to the charge of the parcel
             inline scalar& charge();
 
-            //-NEW- Return access to the number of real the particle
+            //- Return access to the number of real the particle
             inline scalar& nParticle();
 
 
@@ -324,6 +324,7 @@ public:
                     const scalar trackTime
                 );
 
+                //- Sync the velocity at the boundary, since position and velocity are offset in the leap frog scheme
                 template<class TrackCloudType>
                 void syncVelocityAtBoundary
                 (
@@ -359,9 +360,11 @@ public:
             //Do not update fields, simply reflect!
             void specularReflect();
 
+            //Reflect at a wall boundary update fields
             template<class TrackCloudType>
             void wallReflection(TrackCloudType&, trackingData&);
 
+            //Remove the particle at the wall update fields
             template<class TrackCloudType>
             void wallAbsorption(TrackCloudType&, trackingData&);
 

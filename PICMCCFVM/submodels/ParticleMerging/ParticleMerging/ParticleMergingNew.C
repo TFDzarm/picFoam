@@ -27,6 +27,7 @@ License
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+//Construct the model and return a smart pointer
 template<class CloudType>
 Foam::autoPtr<Foam::ParticleMerging<CloudType>>
 Foam::ParticleMerging<CloudType>::New
@@ -35,13 +36,14 @@ Foam::ParticleMerging<CloudType>::New
     CloudType& owner
 )
 {
-    const word modelType(dict.lookup("ParticleMerging"));
+    const word modelType(dict.lookup("ParticleMerging"));//Selected model
 
     Info<< "+ Selecting ParticleMergingModel " << modelType << endl;
 
     typename dictionaryConstructorTable::iterator cstrIter =
         dictionaryConstructorTablePtr_->find(modelType);
 
+    //Model not found...
     if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
         FatalErrorInFunction

@@ -85,7 +85,7 @@ class circuitRLC
     //- Cathode patch area
     scalar cathodeArea_;
 
-    //RLC boundaty on the anode (we measure on the anode FIXME: switch)
+    //RLC boundaty on the cathode
     RLCBoundaryFvPatchField* boundaryCondition_;
 
     //- Provided potential

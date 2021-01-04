@@ -65,7 +65,6 @@ void Foam::SentokuKempNonRelCorrection<CloudType>::correctVelocity(
     if(parcelP->nParticle() > parcelQ->nParticle())
     {
         // See SentokuKempCorrection.C for details
-
         scalar mass = cloud.constProps(parcelP->typeId()).mass();
 
         scalar wr = parcelQ->nParticle()/parcelP->nParticle();

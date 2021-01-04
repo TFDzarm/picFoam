@@ -55,6 +55,7 @@ void Foam::CellAverage<CloudType>::add
     const typename CloudType::parcelType& parcel
 )
 {
+    //Simply add the charge to the cell
     this->field()[parcel.cell()] += parcel.nParticle()*parcel.charge();
 }
 
@@ -62,6 +63,7 @@ void Foam::CellAverage<CloudType>::add
 template<class CloudType>
 void Foam::CellAverage<CloudType>::update()
 {
+    //Divide by the volume
     this->field().primitiveFieldRef() /= this->cloud().mesh().cellVolumes();
 }
 

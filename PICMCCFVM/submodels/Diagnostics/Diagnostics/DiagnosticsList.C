@@ -106,12 +106,14 @@ CloudType& Foam::DiagnosticsList<CloudType>::owner()
 }
 
 
+//Called in PICCloud::info()
 template<class CloudType>
 void Foam::DiagnosticsList<CloudType>::info()
 {
     if(this->empty())
         return;
 
+    //Check if at least one model should execute.
     const CloudType& cloud(this->owner());
     bool runDiagnostic = false;
     forAll(*this, i)
@@ -123,15 +125,16 @@ void Foam::DiagnosticsList<CloudType>::info()
     }
     if(runDiagnostic)
     {
-        forAllConstIter(typename CloudType, cloud, iter)
+        forAllConstIter(typename CloudType, cloud, iter)//Go through all particles
         {
             const typename CloudType::parcelType& p = iter();
-            forAll(*this, i)
+            forAll(*this, i)//Call gatherDiagnostic for all models in the list
             {
                 if(this->operator[](i).shouldExecute()/* || this->operator[](i).shouldWrite()*/)
                     this->operator[](i).gatherDiagnostic(p);
             }
         }
+        //Print the info for all models
         forAll(*this, i)
         {
             if(this->operator[](i).shouldExecute()) {

@@ -35,7 +35,10 @@ namespace Foam
 {
     typedef PICCloud<picParcel> CloudType;
 
+    //Definition of the selection table
     makeWallReflectionModel(CloudType)
+
+    //Add the models
     makeWallReflectionModelType(MaxwellianThermal, CloudType)
     makeWallReflectionModelType(SpecularReflection, CloudType)
     makeWallReflectionModelType(MixedDiffuseSpecular, CloudType)

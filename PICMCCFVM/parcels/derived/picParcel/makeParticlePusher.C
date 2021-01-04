@@ -35,8 +35,10 @@ namespace Foam
 {
     typedef PICCloud<picParcel> CloudType;
 
+    //Definition of the selection table
     makeParticlePusher(PICCloud<picParcel>)
 
+    //Add the Pusher models
     makeParticlePusherType(BorisPusher, CloudType)
     makeParticlePusherType(BorisNRPusher, CloudType)
     makeParticlePusherType(VayPusher, CloudType)

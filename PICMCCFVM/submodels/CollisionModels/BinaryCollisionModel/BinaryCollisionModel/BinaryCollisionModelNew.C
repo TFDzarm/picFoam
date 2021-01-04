@@ -27,6 +27,7 @@ License
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+//Construct the model and return a smart pointer
 template<class CloudType>
 Foam::autoPtr<Foam::BinaryCollisionModel<CloudType>>
 Foam::BinaryCollisionModel<CloudType>::New
@@ -35,13 +36,14 @@ Foam::BinaryCollisionModel<CloudType>::New
     CloudType& owner
 )
 {
-    const word modelType(dict.lookup("BinaryCollisionModel"));
+    const word modelType(dict.lookup("BinaryCollisionModel"));//Lookup the model name
 
     Info<< "+ Selecting BinaryCollisionModel " << modelType << endl;
 
     typename dictionaryConstructorTable::iterator cstrIter =
         dictionaryConstructorTablePtr_->find(modelType);
 
+    //Unknown model, print all known models
     if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
         FatalErrorInFunction

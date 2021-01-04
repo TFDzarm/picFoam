@@ -27,6 +27,10 @@ License
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+/*
+Foam::CrossSectionModel<CloudType,Type>::New
+Construct the model and return a smart pointer
+*/
 template<class CloudType, Foam::crossSectionType Type>
 Foam::autoPtr<Foam::CrossSectionModel<CloudType,Type>>
 Foam::CrossSectionModel<CloudType,Type>::New
@@ -37,6 +41,7 @@ Foam::CrossSectionModel<CloudType,Type>::New
     const label associatedTypeId
 )
 {
+    //Check the template parameter to inform the user which model was selected
     word type;
     if(Type ==  Foam::crossSectionType::ElectronElasticCS)
         type = "Elastic";

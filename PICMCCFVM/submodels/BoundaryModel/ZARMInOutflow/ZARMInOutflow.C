@@ -60,7 +60,7 @@ Foam::ZARMInOutflow<CloudType>::ZARMInOutflow
         {
             patches.append(p);
 
-            //-NEW- Lookup type
+            //Lookup type
             const dictionary& patchPropertiesDict = this->coeffDict().subDict(patch.name());
             const word type(patchPropertiesDict.lookup("type"));
             if(type == "inlet")
@@ -84,6 +84,7 @@ Foam::ZARMInOutflow<CloudType>::ZARMInOutflow
         const polyPatch& patch = cloud.mesh().boundaryMesh()[patches_[p]];
         const patchType& pT = interactionList_[patches_[p]];
 
+        //On the inlet the faceFlux [1/(m^2 s)] is given...
         const dictionary& numberDensitiesDict = (pT == pTInlet) ? this->coeffDict().subDict(patch.name()).subDict("faceFlux") : this->coeffDict().subDict(patch.name()).subDict("numberDensities");
         molecules[p] = wordList(
                     numberDensitiesDict.toc()
@@ -115,6 +116,7 @@ Foam::ZARMInOutflow<CloudType>::ZARMInOutflow
 
         moleculeTypeIds_[p].setSize(molecules[p].size());
         numberDensities_[p].setSize(molecules[p].size());
+        //On the inlet the faceFlux [1/(m^2 s)] is given...
         const dictionary& numberDensitiesDict = (pT == pTInlet) ? this->coeffDict().subDict(patch.name()).subDict("faceFlux") : this->coeffDict().subDict(patch.name()).subDict("numberDensities");
         forAll(molecules[p], i)
         {
@@ -131,6 +133,7 @@ Foam::ZARMInOutflow<CloudType>::ZARMInOutflow
                     << "typeId " << molecules[p][i] << " not defined in cloud." << nl
                     << abort(FatalError);
             }
+            //Number density as parcels so we do not need to divide by nParticle each time
             numberDensities_[p][i] /= cloud.constProps(typeId).nParticle();
         }
     }
@@ -162,6 +165,7 @@ void Foam::ZARMInOutflow<CloudType>::injection()
 
     label particlesInserted = 0;
 
+    //use the boundary temperature and drift velocity
     const volScalarField::Boundary& boundaryT
     (
         cloud.T().boundaryField()
@@ -413,6 +417,7 @@ void Foam::ZARMInOutflow<CloudType>::injection()
                       + (t2 & faceVelocity)*t2
                       + mostProbableSpeed*uNormal*n;
 
+                    //Create a new parcel, sync with the leap frog scheme and inform boundaries of this creation
                     typename CloudType::parcelType* parcel = cloud.addNewParcel
                     (
                         p,
@@ -421,7 +426,7 @@ void Foam::ZARMInOutflow<CloudType>::injection()
                         typeId
                     );
                     parcel->syncVelocityAtBoundary(cloud, -0.5);
-                    particleEjection(*parcel,patchi);//direct call
+                    particleEjection(*parcel,patchi);//directly call
                     cloud.boundaryEventModels().onEjection(*parcel,patchi);
 
                     particlesInserted++;

@@ -35,13 +35,14 @@ Foam::MaxwellSolver<CloudType>::New
     CloudType& owner
 )
 {
-    const word modelType(dict.lookup("MaxwellSolver"));
+    const word modelType(dict.lookup("MaxwellSolver"));//Lookup selected model name
 
     Info<< "+ Selecting MaxwellSolver " << modelType << endl;
 
     typename dictionaryConstructorTable::iterator cstrIter =
         dictionaryConstructorTablePtr_->find(modelType);
 
+    //Unknown model, print all known model names
     if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
         FatalErrorInFunction

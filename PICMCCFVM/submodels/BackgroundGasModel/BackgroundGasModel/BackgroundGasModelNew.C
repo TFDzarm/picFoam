@@ -27,6 +27,7 @@ License
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+//Construct the model and return a smart pointer
 template<class CloudType>
 Foam::autoPtr<Foam::BackgroundGasModel<CloudType>>
 Foam::BackgroundGasModel<CloudType>::New
@@ -35,13 +36,14 @@ Foam::BackgroundGasModel<CloudType>::New
     CloudType& owner
 )
 {
-    const word modelType(dict.lookup("BackgroundGasModel"));
+    const word modelType(dict.lookup("BackgroundGasModel"));//Lookup the selected model
 
     Info<< "+ Selecting BackgroundGas model " << modelType << endl;
 
     typename dictionaryConstructorTable::iterator cstrIter =
         dictionaryConstructorTablePtr_->find(modelType);
 
+    //Selection does not exist, print table with all entries
     if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
         FatalErrorInFunction

@@ -60,11 +60,13 @@ Foam::FloatingPotential<CloudType>::FloatingPotential
     }
     const polyPatch& patch = cloud.mesh().boundaryMesh()[patchId_];
 
+    //This model has to be used on a circuitBoundary
     if(!isA<circuitBoundaryFvPatchField>(phiE.boundaryField()[patchId_]))
         FatalErrorInFunction << "Expected circuitBoundary boundary condition for field " << phiE.name() << " on patch " << patch.name() << nl << abort(FatalError);
 
     boundaryCondition_ = &(refCast<circuitBoundaryFvPatchField>(phiE.boundaryFieldRef()[patchId_]));
 
+    //Calculate the patch area
     const scalarField magSf(mag(patch.faceAreas()));
     patchArea_ = sum(magSf);
     reduce(patchArea_, sumOp<scalar>());
@@ -86,12 +88,14 @@ Foam::FloatingPotential<CloudType>::~FloatingPotential()
 template<class CloudType>
 void Foam::FloatingPotential<CloudType>::preUpdate_Boundary()
 {
-    //Surface update
+    //Surface charge update
     reduce(Qconv_, sumOp<scalar>());
     sigma_ += Qconv_/patchArea_;
 
+    //Set the gradient in the boundary
     boundaryCondition_->circuitGradient() = sigma_/constant::electromagnetic::epsilon0.value();
 
+    //Clear the accumulator
     Qconv_ = 0.0;
 }
 
@@ -111,6 +115,7 @@ bool Foam::FloatingPotential<CloudType>::particleBC(typename CloudType::parcelTy
 {
     const scalar charge = p.nParticle()*p.charge();
 
+    //Remove every particle that hit this boundary and add its charge to the accumulator
     td.keepParticle = false;
     Qconv_ += charge;
     return true;
@@ -119,6 +124,7 @@ bool Foam::FloatingPotential<CloudType>::particleBC(typename CloudType::parcelTy
 template<class CloudType>
 void Foam::FloatingPotential<CloudType>::particleEjection(typename CloudType::parcelType& p, label patchId)
 {
+    //Subtract the charge from the accumulator
     const scalar Q = p.charge()*p.nParticle();
     Qconv_ -= Q;
 }

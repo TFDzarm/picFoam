@@ -35,7 +35,10 @@ namespace Foam
 {
     typedef PICCloud<picParcel> CloudType;
 
+    //Define the selection table
     makeBoundaryEvent(CloudType);
+
+    //Add the models
     makeBoundaryEventType(NoReaction, CloudType);
     makeBoundaryEventType(TestReaction, CloudType);
     makeBoundaryEventType(SputterEvent, CloudType);

@@ -47,15 +47,20 @@ namespace Foam
     //Define ParticleEmitter
     template class ParticleEmitter<CloudType>;
 
-    //Emission models
+    //Emission models selection table
     makeEmissionModel(CloudType)
+
+    //Add the emission models
     makeEmissionModelType(ThermionicEmission,CloudType)
     makeEmissionModelType(FowlerNordheim,CloudType)
     makeEmissionModelType(SputterEmission,CloudType)
     makeEmissionModelType(NoEmission,CloudType)
 
-    //Open/Freestream Boundaries
+
+    //Open/Freestream Boundaries selection table
     makeBoundaryModel(CloudType)
+
+    //Add the models:
     makeBoundaryModelType(NoInflow, CloudType)
     makeBoundaryModelType(FreeStream, CloudType)
     makeBoundaryModelType(ZARMInOutflow, CloudType)

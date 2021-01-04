@@ -44,7 +44,10 @@ Foam::CrossSectionList<CloudType,Type>::CrossSectionList
 :
     PtrList<Foam::CrossSectionModel<CloudType,Type>>()
 {
+    //There can be one model for every species
     this->setSize(owner.typeIdList().size());
+
+    //Lookup which models were specified by the user
     forAllConstIter(IDLList<entry>, dict, iter)
     {
         if(iter().isDict())
@@ -59,6 +62,7 @@ Foam::CrossSectionList<CloudType,Type>::CrossSectionList
             {
                 FatalErrorInFunction << "Model for " << iter().keyword() << " is already defined" << abort(FatalError);
             }
+            //Based on the template "Type" read the correct entry
             word modelName;
             if(Type == Foam::crossSectionType::ElectronElasticCS)
                 modelName = subDict.lookup<word>("ElasticCrossSection");
@@ -66,6 +70,7 @@ Foam::CrossSectionList<CloudType,Type>::CrossSectionList
                 modelName = subDict.lookup<word>("ExcitationCrossSection");
             else if(Type == Foam::crossSectionType::ElectronIonizationCS)
                 modelName = subDict.lookup<word>("IonizationCrossSection");
+            //Construct the model
             this->set(
                           typeId,
                           CrossSectionModel<CloudType,Type>::New(

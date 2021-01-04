@@ -42,7 +42,7 @@ Foam::CloudCompositionInfo<CloudType>::CloudCompositionInfo
     totalVolume_(0.0),
     printNumberDensity_(false)
 {
-    printNumberDensity_.readIfPresent("printNumberDensity",this->coeffDict());
+    printNumberDensity_.readIfPresent("printNumberDensity",this->coeffDict());//Check option to also print number densities
 
     const polyMesh& mesh(cloud.mesh());
     totalVolume_ = sum(mesh.cellVolumes());

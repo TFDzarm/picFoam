@@ -63,7 +63,7 @@ Foam::circuitBoundaryFvPatchField::circuitBoundaryFvPatchField
     scalar Q = dict.lookupOrDefault("Q",0.0);
     if(Q != 0.0)
     {
-        circuitGradient_ = Q/area_/constant::electromagnetic::epsilon0.value();
+        circuitGradient_ = Q/area_/constant::electromagnetic::epsilon0.value();//Set the inital value read from boundary definition
     }
 
 
@@ -137,7 +137,7 @@ void Foam::circuitBoundaryFvPatchField::rmap
     fvPatchField<scalar>::rmap(ptf, addr);
 }
 
-void Foam::circuitBoundaryFvPatchField::evaluate(const Pstream::commsTypes)
+void Foam::circuitBoundaryFvPatchField::evaluate(const Pstream::commsTypes)//Called every timestep
 {
     if (!this->updated())
     {
@@ -146,7 +146,7 @@ void Foam::circuitBoundaryFvPatchField::evaluate(const Pstream::commsTypes)
 
     Field<scalar>::operator=
     (
-         this->patchInternalField() + circuitGradient_/this->patch().deltaCoeffs()
+         this->patchInternalField() + circuitGradient_/this->patch().deltaCoeffs()//Update the field on the patch
     );
 
     fvPatchField<scalar>::evaluate();
@@ -155,7 +155,7 @@ void Foam::circuitBoundaryFvPatchField::evaluate(const Pstream::commsTypes)
 
 
 Foam::tmp<Foam::Field<Foam::scalar>>
-Foam::circuitBoundaryFvPatchField::valueInternalCoeffs
+Foam::circuitBoundaryFvPatchField::valueInternalCoeffs//Used by the solver
 (
     const tmp<scalarField>&
 ) const
@@ -164,7 +164,7 @@ Foam::circuitBoundaryFvPatchField::valueInternalCoeffs
 }
 
 Foam::tmp<Foam::Field<Foam::scalar>>
-Foam::circuitBoundaryFvPatchField::valueBoundaryCoeffs
+Foam::circuitBoundaryFvPatchField::valueBoundaryCoeffs//Used by the solver
 (
     const tmp<scalarField>&
 ) const
@@ -173,7 +173,7 @@ Foam::circuitBoundaryFvPatchField::valueBoundaryCoeffs
 }
 
 Foam::tmp<Foam::Field<Foam::scalar>>
-Foam::circuitBoundaryFvPatchField::gradientInternalCoeffs() const
+Foam::circuitBoundaryFvPatchField::gradientInternalCoeffs() const//Used by the solver
 {
     return tmp<Field<scalar>>
     (
@@ -182,7 +182,7 @@ Foam::circuitBoundaryFvPatchField::gradientInternalCoeffs() const
 }
 
 Foam::tmp<Foam::Field<Foam::scalar>>
-Foam::circuitBoundaryFvPatchField::gradientBoundaryCoeffs() const
+Foam::circuitBoundaryFvPatchField::gradientBoundaryCoeffs() const//Used by the solver
 {
     return tmp<Field<scalar>>
     (

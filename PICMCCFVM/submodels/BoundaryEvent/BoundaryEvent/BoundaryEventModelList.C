@@ -51,6 +51,11 @@ Foam::BoundaryEventModelList<CloudType>::BoundaryEventModelList
     setupModels(dict, owner);
 }
 
+/*
+Foam::BoundaryEventModelList<CloudType>::setupModels
+
+Read the modelList from constant/picProperties and construct the model
+*/
 template<class CloudType>
 void Foam::BoundaryEventModelList<CloudType>::setupModels(const dictionary& dict, CloudType& owner)
 {
@@ -82,18 +87,19 @@ void Foam::BoundaryEventModelList<CloudType>::setupModels(const dictionary& dict
             selectedModels.append(modelData[i].modelName());
     }
 
-    this->setSize(selectedModels.size());
+    this->setSize(selectedModels.size());//Set the size of the pointer list
     forAll(selectedModels,i)
     {
         word modelType = selectedModels[i];
 
-        DynamicList<label> associatedPatches;
+        DynamicList<label> associatedPatches;//List of patches this model is defined on, will be saved by the model
         forAll(modelData,j)
         {
             if(modelData[j].modelName() == modelType)
                 associatedPatches.append(modelData[j].patchIds());
         }
 
+        //Construct the model
         this->set(i,
                   BoundaryEvent<CloudType>::New(
                       modelType,
@@ -125,6 +131,11 @@ Foam::BoundaryEventModelList<CloudType>::~BoundaryEventModelList()
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
+/*
+Foam::BoundaryEventModelList<CloudType>::onCollision
+
+A particle has collided with a patch, check if we have a model on this patch
+*/
 template<class CloudType>
 void Foam::BoundaryEventModelList<CloudType>::onCollision
 (
@@ -134,11 +145,16 @@ void Foam::BoundaryEventModelList<CloudType>::onCollision
 {
     forAll(*this, i)
     {
-        if(this->operator[](i).interactWithPatch(p.patch()))
-           this->operator[](i).collisionEvent(p, td);
+        if(this->operator[](i).interactWithPatch(p.patch()))//Should we interact with this patch, checks associatedPatches
+           this->operator[](i).collisionEvent(p, td);//Interact...
     }
 }
 
+/*
+Foam::BoundaryEventModelList<CloudType>::onCollision
+
+A particle was ejected from a patch, check if we have a model on this patch
+*/
 template<class CloudType>
 void Foam::BoundaryEventModelList<CloudType>::onEjection
 (
@@ -148,12 +164,16 @@ void Foam::BoundaryEventModelList<CloudType>::onEjection
 {
     forAll(*this, i)
     {
-        if(this->operator[](i).interactWithPatch(patchId))
-            this->operator[](i).ejectionEvent(p, patchId);
+        if(this->operator[](i).interactWithPatch(patchId))//Should we interact with this patch, checks associatedPatches
+            this->operator[](i).ejectionEvent(p, patchId);//Interact...
     }
 }
 
+/*
+Foam::BoundaryEventModelList<CloudType>::info
 
+The timestep has finished, print some info...
+*/
 template<class CloudType>
 void Foam::BoundaryEventModelList<CloudType>::info()
 {
@@ -163,6 +183,11 @@ void Foam::BoundaryEventModelList<CloudType>::info()
     }
 }
 
+/*
+Foam::BoundaryEventModelList<CloudType>::postMove
+
+All parcels have been moved, do something...
+*/
 template<class CloudType>
 void Foam::BoundaryEventModelList<CloudType>::postMove()
 {

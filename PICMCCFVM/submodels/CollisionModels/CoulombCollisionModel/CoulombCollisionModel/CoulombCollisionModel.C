@@ -56,7 +56,7 @@ Foam::CoulombCollisionModel<CloudType>::CoulombCollisionModel
     dict_(dict),
     owner_(owner),
     coeffDict_(dict.subDict(type + "Coeffs")),
-    pairingAlgorithm_
+    pairingAlgorithm_//Choose and construct the model
     (
         PairingAlgorithm<CloudType>::New
         (
@@ -65,7 +65,7 @@ Foam::CoulombCollisionModel<CloudType>::CoulombCollisionModel
             *this
         )
     ),
-    ionizationModel_
+    ionizationModel_//Choose and construct the model
     (
         IonizationModel<CloudType>::New
         (
@@ -75,7 +75,7 @@ Foam::CoulombCollisionModel<CloudType>::CoulombCollisionModel
     ),
     allowIntraCollision_(readBool(coeffDict_.lookup("allowIntraCollision"))),
     calculateDebyeLength_(true),
-    weightCorrection_
+    weightCorrection_//Choose and construct the model
     (
         WeightCorrectionModel<CloudType>::New
         (
@@ -86,9 +86,15 @@ Foam::CoulombCollisionModel<CloudType>::CoulombCollisionModel
     coulombLog_()
 {
     label nSpecies = owner.typeIdList().size();
+
+    //Simply save the coulomb logarithm twice ignoring the order
     coulombLog_.setSize(nSpecies,List<scalar>(nSpecies,0.0));
+
+    //Return empty dict if entry is not found
     const dictionary& coulombLogdict = coeffDict_.subOrEmptyDict("Collisions");
     label fixedCoulombLog = 0;
+
+    //Read user provided coulomb logarithm
     forAllConstIter(IDLList<entry>, coulombLogdict, iter)
     {
         if(iter().isDict())
@@ -107,6 +113,7 @@ Foam::CoulombCollisionModel<CloudType>::CoulombCollisionModel
             else if(coulombLog_[p1][p2] == cLog)
                 continue;
 
+            //Save the coulomb logarithm
             coulombLog_[p1][p2] = cLog;coulombLog_[p2][p1] = cLog;
             if(coulombLog_[p1][p2] > 0.0)
             {
@@ -115,6 +122,7 @@ Foam::CoulombCollisionModel<CloudType>::CoulombCollisionModel
             }
         }
     }
+    //If the user provided a logarithm for all possible collisions no calculations need to be done
     if(fixedCoulombLog == nSpecies*(nSpecies+1)/2)
         calculateDebyeLength_ = false;
 }
@@ -174,7 +182,9 @@ scalar Foam::CoulombCollisionModel<CloudType>::debyeLength(label celli)
     const CloudType& cloud(this->owner());
     scalar debyeLength = 0.0;
     scalar debye(0.0), n_max(0.0);
-    forAll(cloud.chargedSpecies(),si)//Species 1
+
+    //Go through all charged species
+    forAll(cloud.chargedSpecies(),si)
     {
         scalar T(0.0), n(0.0);
         label speci = cloud.chargedSpecies()[si];
@@ -185,6 +195,8 @@ scalar Foam::CoulombCollisionModel<CloudType>::debyeLength(label celli)
         scalar charge = 0.0;
         scalar vSqr(0.0);
         //vector v = Zero;
+
+        //Calculate average properties
         forAll(cloud.sortedCellOccupancy()[celli][speci],parti)
         {
             typename CloudType::parcelType* p = cloud.sortedCellOccupancy()[celli][speci][parti];
@@ -199,12 +211,12 @@ scalar Foam::CoulombCollisionModel<CloudType>::debyeLength(label celli)
         //v /= n;
         charge /= n;//avg charge
         vSqr /= n;//avg vSqr
-        n /= cloud.mesh().cellVolumes()[celli];
+        n /= cloud.mesh().cellVolumes()[celli];//number density
 
         if(n > n_max)
             n_max = n;
 
-        //temperatur according to Nanbu assumes Maxwaillian distribution (ignore drift velocity -> prevent error at low particle count)
+        //Temperatur according to Nanbu assumes Maxwaillian distribution (we ignore drift velocity this prevent error at low parcel counts)
         T = mass/(3.0*constant::physicoChemical::k.value())*(vSqr/*-(v&v)*/);
 
         if(T <= 0.0)
@@ -216,7 +228,8 @@ scalar Foam::CoulombCollisionModel<CloudType>::debyeLength(label celli)
     if(debye <= 0.0)
         return debyeLength;
 
-    scalar r_min = ::pow(4.0*constant::mathematical::pi*n_max/3.0,-1.0/3.0); // mean interatomic distance (Wigner-Seitz radius)
+    //mean interatomic distance (Wigner-Seitz radius)
+    scalar r_min = ::pow(4.0*constant::mathematical::pi*n_max/3.0,-1.0/3.0); 
 
     debyeLength = max(r_min,::sqrt(1/debye));
 

@@ -27,6 +27,7 @@ License
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+//Construct the model and return a smart pointer
 template<class CloudType>
 Foam::autoPtr<Foam::DiagnosticInfo<CloudType>>
 Foam::DiagnosticInfo<CloudType>::New
@@ -41,6 +42,7 @@ Foam::DiagnosticInfo<CloudType>::New
     typename dictionaryConstructorTable::iterator cstrIter =
         dictionaryConstructorTablePtr_->find(info);
 
+    //Model not found...
     if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
         FatalErrorInFunction

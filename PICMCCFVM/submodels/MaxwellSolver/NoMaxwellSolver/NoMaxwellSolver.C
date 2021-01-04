@@ -50,6 +50,6 @@ Foam::NoMaxwellSolver<CloudType>::~NoMaxwellSolver()
 
 template<class CloudType>
 void Foam::NoMaxwellSolver<CloudType>::solveFields()
-{}
+{}//Do nothing...
 
 // ************************************************************************* //

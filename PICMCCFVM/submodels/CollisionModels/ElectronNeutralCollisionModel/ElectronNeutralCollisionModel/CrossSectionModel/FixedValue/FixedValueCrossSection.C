@@ -152,7 +152,7 @@ Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::ElectronIonizatio
 template<class CloudType>
 Foam::scalar Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::ElectronIonizationCS>::crossSection(scalar eVEnergy) const
 {
-    return value_;
+    return value_;//return the fixed value
 }
 
 template<class CloudType>

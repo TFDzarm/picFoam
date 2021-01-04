@@ -53,7 +53,7 @@ void Foam::NoWeightCorrectionModel<CloudType>::correctVelocity(
                 vector preUp,
                 vector preUq
                 )
-{}
+{}//Do nothing
 
 
 // ************************************************************************* //

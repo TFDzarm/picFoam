@@ -90,6 +90,7 @@ Foam::WeightCorrectionModel<CloudType>::coeffDict() const
 template<class CloudType>
 bool Foam::WeightCorrectionModel<CloudType>::active() const
 {
+    //Only operate if the simulation has unequal weights among the parcel
     return (this->owner().nParticleEqWeight() == 0.0);
 }
 

@@ -44,7 +44,7 @@ moleculeProperties
         solveMovement   true;
         nEquivalentParticles 1;
     }
-    SpeciesRelations
+    SpeciesRelations//Relations between species. Required for the collision algorithms among others
     {
         electronTypeId  e;
     }

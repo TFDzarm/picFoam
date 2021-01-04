@@ -27,6 +27,7 @@ License
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+//Construct the model and return a smart pointer
 template<class CloudType>
 Foam::autoPtr<Foam::CoulombCollisionModel<CloudType>>
 Foam::CoulombCollisionModel<CloudType>::New
@@ -35,13 +36,14 @@ Foam::CoulombCollisionModel<CloudType>::New
     CloudType& owner
 )
 {
-    const word modelType(dict.lookup("CoulombCollisionModel"));
+    const word modelType(dict.lookup("CoulombCollisionModel"));//Lookup which model was selected
 
     Info<< "+ Selecting CoulombCollisionModel " << modelType << endl;
 
     typename dictionaryConstructorTable::iterator cstrIter =
         dictionaryConstructorTablePtr_->find(modelType);
 
+    //Model was not found, print all known models..
     if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
         FatalErrorInFunction

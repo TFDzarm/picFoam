@@ -61,7 +61,7 @@ Foam::vector Foam::CellAverageFW::getFieldVector
     const tetIndices& tetIs
 ) const
 {
-    return field_.primitiveField()[tetIs.cell()];
+    return field_.primitiveField()[tetIs.cell()];//Simply return the field value of cell
 }
 
 // ************************************************************************* //

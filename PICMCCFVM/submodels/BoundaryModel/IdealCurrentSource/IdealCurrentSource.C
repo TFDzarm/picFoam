@@ -97,9 +97,11 @@ Foam::IdealCurrentSource<CloudType>::IdealCurrentSource
                 interactionList_[patchId] = etAnode;
                 anodePatch_ = patchId;
 
+                //The anode has to be a fixedValue boundary condition
                 if(!isA<fixedValueFvPatchField<scalar>>(phiE.boundaryField()[patchId]))
                     FatalErrorInFunction << "Expected fixedValue boundary condition for field " << phiE.name() << " on patch " << patch.name() << nl << abort(FatalError);
 
+                //Calculate area if the patch
                 const scalarField magSf(mag(patch.faceAreas()));
                 anodeArea_ = sum(magSf);
                 reduce(anodeArea_, sumOp<scalar>());
@@ -107,31 +109,37 @@ Foam::IdealCurrentSource<CloudType>::IdealCurrentSource
             }
             else if(type == "cathode")
             {
-                emissionList_.initilizeAll(patchId,ParticleEmitter<CloudType>::vmMaxwellianFlux);
+                emissionList_.initilizeAll(patchId,ParticleEmitter<CloudType>::vmMaxwellianFlux);//Allways use a MaxwellianFlux emitter
 
                 interactionList_[patchId] = etCathode;
 
                 cathodePatch_ = patchId;
 
+                //Cathode has to be a circuit boundary
                 if(!isA<circuitBoundaryFvPatchField>(phiE.boundaryField()[patchId]))
                     FatalErrorInFunction << "Expected circuitBoundary boundary condition for field " << phiE.name() << " on patch " << patch.name() << nl << abort(FatalError);
 
                 boundaryCondition_ = &(refCast<circuitBoundaryFvPatchField>(phiE.boundaryFieldRef()[patchId]));
 
+                //Calculate area if the patch
                 const scalarField magSf(mag(patch.faceAreas()));
                 cathodeArea_ = sum(magSf);
                 reduce(cathodeArea_, sumOp<scalar>());
+
+                //If the real area is larger e.g. we run a reduced mesh case -> scale the current
                 scalar refArea = this->coeffDict().lookupOrDefault("refArea",0.0);
                 if(refArea > 0.0) {
                     I_ *= cathodeArea_/refArea;
                     Info << "Cathode area: " << cathodeArea_ << " refArea: " << refArea << " setting I to " << I_ << endl;
                 }
+                //If the current density J instead of I was give set I
                 if(J_ > 0.0)
                 {
                     I_ = J_*cathodeArea_;
                     Info << "Current density J=" << J_ << " given, set I to " << I_ << endl;
                 }
 
+                //Initial surface charge
                 sigma_ = boundaryCondition_->circuitGradient()*constant::electromagnetic::epsilon0.value();
 
             }
@@ -165,30 +173,40 @@ void Foam::IdealCurrentSource<CloudType>::preUpdate_Boundary()
     CloudType& cloud(this->owner());
     const polyMesh& mesh(cloud.mesh());
 
+    //Parallel COM
     reduce(chargeAccumulator_, sumOp<scalar>());
 
     scalar dt = mesh.time().deltaTValue();
 
+    //Update the surface charge
     sigma_ += (chargeAccumulator_ - I_*dt)/cathodeArea_;
 
+    //Update the gradient in the boundary condition
     boundaryCondition_->circuitGradient() = sigma_/constant::electromagnetic::epsilon0.value();
     Info << "[" << typeName << "] surface charge: " << sigma_*cathodeArea_  << " As" << endl;
+
+    //Clear the charge accumulator
     chargeAccumulator_ = 0.0;
 }
 
 template<class CloudType>
 void Foam::IdealCurrentSource<CloudType>::postUpdate_Boundary()
 {
+    //Calculate the average voltage on the boundary
     scalar avgV = 0.0;
-    if(boundaryCondition_->size() > 0)
+    if(boundaryCondition_->size() > 0)//In parallel runs some processors might not have a part of the boundary
         avgV = average(boundaryCondition_->patchInternalField());
     reduce(avgV, maxOp<scalar>());
     Info << "[" << typeName << "] average voltage: " << avgV << " V" << endl;
 }
 
+/*
+Foam::IdealCurrentSource<CloudType>::injection called in evolve function
+*/
 template<class CloudType>
 void Foam::IdealCurrentSource<CloudType>::injection()
 {
+    //Tell EmissionModels to inject particles
     emissionList_.emission();
 }
 
@@ -196,6 +214,7 @@ void Foam::IdealCurrentSource<CloudType>::injection()
 template<class CloudType>
 void Foam::IdealCurrentSource<CloudType>::particleEjection(typename CloudType::parcelType& p, label patchId)
 {
+    //Have we ejected a charged particle? Subtract the charge...
     if(interactionList_[patchId] == etCathode)
     {
         scalar Q = p.charge()*p.nParticle();
@@ -211,6 +230,7 @@ bool Foam::IdealCurrentSource<CloudType>::particleBC(typename CloudType::parcelT
     label patchId = p.patch();
     const scalar charge = p.nParticle()*p.charge();
 
+    //Did a charged particle hit the boundary? Add the charge... Else reflect...
     if(charge != 0.0)
     {
         if(interactionList_[patchId] == etCathode)
@@ -222,6 +242,7 @@ bool Foam::IdealCurrentSource<CloudType>::particleBC(typename CloudType::parcelT
         p.wallReflection(cloud, td);
     }
 
+    //Check EmissionModels
     if(interactionList_[patchId] == etCathode)
         emissionList_.collisionalEmission(p,td);
 

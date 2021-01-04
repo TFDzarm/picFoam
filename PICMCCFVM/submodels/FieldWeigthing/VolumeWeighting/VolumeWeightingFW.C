@@ -35,7 +35,7 @@ Foam::VolumeWeightingFW::VolumeWeightingFW
 )
 :
     FieldWeigthing(fieldName, dict, mesh),
-    Einterp_(autoPtr<interpolationCellPoint<vector>>(new interpolationCellPoint<vector>(field_)))
+    Einterp_(autoPtr<interpolationCellPoint<vector>>(new interpolationCellPoint<vector>(field_)))//Initial set up of the interpolation class for the field
 {}
 
 
@@ -63,7 +63,7 @@ Foam::vector Foam::VolumeWeightingFW::getFieldVector
     const tetIndices& tetIs
 ) const
 {
-    return Einterp_->interpolate(coordinates,tetIs);
+    return Einterp_->interpolate(coordinates,tetIs);//Interpolate to the coordinates
 }
 
 

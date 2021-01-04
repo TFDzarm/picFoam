@@ -82,8 +82,10 @@ void Foam::NanbuYonemuraPairing<CloudType>::pairANDcollide()
                 if(j < i)//... so that we can break and the same species do not collide twice
                     break;
 
+                //Collision partner species
                 label beta = chargedSpecies[j];
 
+                //Number of particles in this cell
                 label nParcelAlpha= sortedCellOccupancy[celli][alpha].size();
                 label nParcelBeta = sortedCellOccupancy[celli][beta].size();
 
@@ -181,6 +183,7 @@ void Foam::NanbuYonemuraPairing<CloudType>::pairANDcollide()
 
                     if(nParcelAlpha == nParcelBeta)
                     {
+                        //Number densities
                         scalar nP = nAlpha/mesh.cellVolumes()[celli];
                         scalar nQ = nBeta/mesh.cellVolumes()[celli];
 

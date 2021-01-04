@@ -75,6 +75,7 @@ Foam::SimpleInjection<CloudType>::SimpleInjection
 
     injectorPatch_ = associatedPatches[0];
 
+    //Pick a velocity model
     word velocityModel = this->coeffDict().lookup("velocityModel");
     if(velocityModel == "birdMaxwellianFlux")
         emitter_.initilizeParticleEmitter(injectorPatch_, ParticleEmitter<CloudType>::vmBirdMaxwellianFlux);
@@ -103,6 +104,7 @@ Foam::SimpleInjection<CloudType>::SimpleInjection
 
     const dictionary& interactions(this->coeffDict().subDict("interactions"));
 
+    //Read selected Particle-Boundary interactions
      forAllConstIter(IDLList<entry>, interactions, iter)
      {
          if(iter().isDict())
@@ -128,6 +130,7 @@ Foam::SimpleInjection<CloudType>::SimpleInjection
          }
      }
 
+    //For floating boundaries we need a special boundary condtion
      if(isFloatingBC_)
      {
          volScalarField& phiE = cloud.elpotentialField();
@@ -135,14 +138,16 @@ Foam::SimpleInjection<CloudType>::SimpleInjection
          if(!isA<circuitBoundaryFvPatchField>(phiE.boundaryField()[injectorPatch_]))
              FatalErrorInFunction << "Expected circuitBoundary boundary condition for field " << phiE.name() << " on patch " << patch.name() << nl << abort(FatalError);
 
+        //Save the pointer to  boundary condition
          boundaryCondition_ = &(refCast<circuitBoundaryFvPatchField>(phiE.boundaryFieldRef()[injectorPatch_]));
 
+        //Calculate the area
          const scalarField magSf(mag(patch.faceAreas()));
          patchArea_ = sum(magSf);
          reduce(patchArea_, sumOp<scalar>());
      }
 
-
+    //Setup list of particles to be injected by this model
      DynamicList<label> typeIds;
      forAll(injectionSpeciesList_, i)
      {
@@ -177,11 +182,13 @@ void Foam::SimpleInjection<CloudType>::preUpdate_Boundary()
 {
     if (isFloatingBC_)
     {
-        //Circuit update
+        //Parallel COM
         reduce(Qconv_, sumOp<scalar>());
 
+        //Potential gradient update
         boundaryCondition_->circuitGradient() = boundaryCondition_->circuitGradient() + Qconv_/patchArea_/constant::electromagnetic::epsilon0.value();
 
+        //Clear the accumulator
         Qconv_ = 0.0;
     }
 }
@@ -192,7 +199,7 @@ void Foam::SimpleInjection<CloudType>::injection()
       CloudType& cloud(this->owner());
       const fvMesh& mesh(cloud.mesh());
 
-
+      //If we should not injected anymore return...
       if(mesh.time().value() > injectionEndTime_)
       {
           Info<< "[" << typeName << "] no injection (t > injectionEndTime_)" << endl;
@@ -200,25 +207,30 @@ void Foam::SimpleInjection<CloudType>::injection()
       }
       const scalar dt = mesh.time().deltaTValue();
 
+      //For all injection species
       forAll(injectionSpeciesTypeIds_, injS)
       {
           label injTypeId = injectionSpeciesTypeIds_[injS];
           label particlesInserted = 0;
 
+          //Calculate number of parcels to be injected
           scalar nParcels =  iF_[injS]/cloud.constProps(injTypeId).nParticle() * dt + particleRemainder_[injS];//if_ = frequency/nParticle
 
           label nParcelsToInject = label(nParcels);
 
+          //Save remaining particle fraction for next timestep
           particleRemainder_[injS] = nParcels-nParcelsToInject;
 
+          //Inject all... use the emitter class
           for(label n = 0; n < nParcelsToInject; n++)
           {
               scalar temperature = eV_[injS]*constant::electromagnetic::e.value()/constant::physicoChemical::k.value();
               typename CloudType::parcelType* parcel = emitter_.emitParticle(temperature,injTypeId);
-              if(parcel != nullptr)
+              if(parcel != nullptr)//successful?
                   particlesInserted++;
           }
 
+          //Print number of injected parcels
           reduce(particlesInserted, sumOp<label>());
 
           Info<< "[" << typeName << "] Particles inserted (" << injectionSpeciesList_[injS] << ")           = "
@@ -241,9 +253,8 @@ bool Foam::SimpleInjection<CloudType>::particleBC(typename CloudType::parcelType
             else
             {
 
-
+                //inject a new parcel 
                 label injS = findIndex(injectionSpeciesTypeIds_,typeId);
-
                 if(injS != -1)
                 {
                     scalar temperature = eV_[injS]*constant::electromagnetic::e.value()/constant::physicoChemical::k.value();
@@ -261,11 +272,13 @@ bool Foam::SimpleInjection<CloudType>::particleBC(typename CloudType::parcelType
         }
         else if(interactionList_[typeId] == ptDeletionPatch)
         {
+            //just delete the parcel
             td.keepParticle = false;
             return true;
         }
         else if(interactionList_[typeId] == ptFloating)
         {
+            //Update the charge accumulator if this is a floating boundary
             const scalar charge = p.nParticle()*p.charge();
             Qconv_ += charge;
 
@@ -281,6 +294,7 @@ bool Foam::SimpleInjection<CloudType>::particleBC(typename CloudType::parcelType
 template<class CloudType>
 void Foam::SimpleInjection<CloudType>::particleEjection(typename CloudType::parcelType& p, label patchId)
 {
+    //Subtract the charge if this is a floating boundary
     if(isFloatingBC_){
         scalar Q = p.charge()*p.nParticle();
         Qconv_ -= Q;

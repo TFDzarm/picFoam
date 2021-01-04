@@ -46,9 +46,11 @@ Foam::PairMerging<CloudType>::PairMerging
     mergeSpecies_(),
     nParticleDev_(this->coeffDict().lookup("nDeviation"))
 {
+    //Settings mismatch?
     if((cellParcelMax_*reductionFactor_) < nCheckNeighbors_)
         FatalErrorInFunction << "Merging: Reduction to " << cellParcelMax_*reductionFactor_ << " while checking " << nCheckNeighbors_ << " neighbors is not possible" << abort(FatalError);
 
+    //Get the typeIds
     DynamicList<label> mS;
     wordList species(this->coeffDict().lookup("species"));
     forAll(species, i)
@@ -79,7 +81,7 @@ Foam::PairMerging<CloudType>::~PairMerging()
 template<class CloudType>
 bool Foam::PairMerging<CloudType>::shouldMerge() const
 {
-    return true;//check every timestep
+    return true;//We want to call mergeParticles() every timestep
 }
 
 template<class CloudType>
@@ -100,63 +102,72 @@ void Foam::PairMerging<CloudType>::mergeParticles()
             {
                 label typeId = mergeSpecies_[idx];
 
-                label N = sortedCellOccupancy[celli][typeId].size();
+                label N = sortedCellOccupancy[celli][typeId].size();//Number of particles in the current cell
 
-                if(N > cellParcelMax_)
+                if(N > cellParcelMax_)//Check condition for merging
                 {
-                    label nTarget = N*reductionFactor_;
+                    label nTarget = N*reductionFactor_;//Try to reduce to this number
 
+                    //Create a list of the magnitude of velocities for every particle in this cell
                     List<scalar> mergeVelocities(N);
                     forAll(sortedCellOccupancy[celli][typeId],i)
                             mergeVelocities[i] = mag(sortedCellOccupancy[celli][typeId][i]->U());
 
 
+                    //Index list for every particle
                     List<label> mergeSelect(N);
                     forAll(mergeSelect,pos)//iota
                         mergeSelect[pos] = pos;
 
+                    //Sort the index list based on the particles velocities
                     sort(mergeSelect,[&mergeVelocities](label i1, label i2) {return mergeVelocities[i1] < mergeVelocities[i2];});//Lambda magic
 
 
+                    //Merge until number of checks is exceeded or condition is met
                     label checks = 0;
                     while(N > nTarget)
                     {
                         label pId1 = rndGen.sampleAB<label>(0, N);
-                        typename CloudType::parcelType* p1 = sortedCellOccupancy[celli][typeId][mergeSelect[pId1]];
+                        typename CloudType::parcelType* p1 = sortedCellOccupancy[celli][typeId][mergeSelect[pId1]];//Randomly select the first partner
                         typename CloudType::parcelType* p2 = nullptr;
 
+                        //Get range of the neighbors
                         label pId2 = pId1-(nCheckNeighbors_/2);
                         if(pId2 < 0)
                             pId2 = 0;
                         if(pId2+nCheckNeighbors_ > N-1)
                             pId2 = N-nCheckNeighbors_-1;
 
+                        //Check neighbors
                         for(label i = 0; i < nCheckNeighbors_; i++)
                         {
-                            if(pId2==pId1)
+                            if(pId2==pId1)//Do not compare particle against itself
                                 pId2++;
 
-                            typename CloudType::parcelType* candidate = sortedCellOccupancy[celli][typeId][mergeSelect[pId2]];
+                            typename CloudType::parcelType* candidate = sortedCellOccupancy[celli][typeId][mergeSelect[pId2]];//2nd partner
 
-                            //check
+                            //number of checks
                             checkedParcel++;
 
+                            //Check velocity deviation
                             if(nParticleDev_[idx] - mag(candidate->nParticle() - p1->nParticle()) < 0.0) {
                                 pId2++;
                                 continue;
                             }
 
+                            //Do not merge particle with different ionization states
                             if(candidate->chargeModifier() != p1->chargeModifier()) {
                                 pId2++;
                                 continue;
                             }
 
-
+                            //Check directions of the particles
                             if((candidate->U()&p1->U()) > mergeVelocities[pId2]*mergeVelocities[pId1]*::cos(angleDifference_)) {
                                 pId2++;
                                 continue;
                             }
-
+                            
+                            //Check velocity ratio
                             scalar ratio = mergeVelocities[pId2]/mergeVelocities[pId1];
                             if(ratio > 1.0)
                                 ratio = 1.0/ratio;
@@ -170,15 +181,15 @@ void Foam::PairMerging<CloudType>::mergeParticles()
 
                         }
 
-                        if(p2 != nullptr)
+                        if(p2 != nullptr)//We found a particle to merge with...
                         {
                             mergedParcel++;
-                            scalar nSumParticle = p1->nParticle()+p2->nParticle();
+                            scalar nSumParticle = p1->nParticle()+p2->nParticle();//Sum weight
                             const typename CloudType::parcelType::constantProperties& cP = cloud.constProps(typeId);
 
-                            vector CoM = (p1->nParticle()*p1->position() + p2->nParticle()*p2->position())/nSumParticle;
+                            vector CoM = (p1->nParticle()*p1->position() + p2->nParticle()*p2->position())/nSumParticle;//Center of Mass position for the new one
                             //FIXME: account for displacement in potential field?
-                            vector newU = (p1->nParticle()*p1->U() + p2->nParticle()*p2->U())/nSumParticle;
+                            vector newU = (p1->nParticle()*p1->U() + p2->nParticle()*p2->U())/nSumParticle;//Center of Mass velocity
 
                             //Error checking
                             scalar preKinE = 0.5*cP.mass()*( (p1->U() & p1->U())*p1->nParticle() + (p2->U() & p2->U())*p2->nParticle());
@@ -197,11 +208,13 @@ void Foam::PairMerging<CloudType>::mergeParticles()
                             typename CloudType::parcelType* p = cloud.addNewParcel(CoM,p2->cell(),newU,p2->typeId());
                             p->nParticle() = nSumParticle;
 
+                            //Delete the old particles
                             cloud.deleteParticle(*p2);
                             sortedCellOccupancy[celli][typeId][mergeSelect[pId2]] = nullptr;
                             cloud.deleteParticle(*p1);
                             sortedCellOccupancy[celli][typeId][mergeSelect[pId1]] = nullptr;
 
+                            //Update the selection lists so we do not pick them again
                             label minPos,maxPos;
                             if(pId1 > pId2) {
                                 minPos = pId2;maxPos = pId1;
@@ -226,6 +239,7 @@ void Foam::PairMerging<CloudType>::mergeParticles()
                 }
             }
         }
+        //Parallel COM
         reduce(mergedParcel,sumOp<label>());
         reduce(checkedParcel,sumOp<label>());
 
@@ -233,6 +247,7 @@ void Foam::PairMerging<CloudType>::mergeParticles()
 
         cumulativeKinEnergyError_ += kinEnergyError;
 
+        //Print info
         if(mergedParcel > 0)
         {
             Info << "    Merged parcels                          = " << mergedParcel << nl

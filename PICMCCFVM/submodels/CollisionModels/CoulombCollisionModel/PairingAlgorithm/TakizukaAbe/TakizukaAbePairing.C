@@ -41,6 +41,7 @@ Foam::TakizukaAbePairing<CloudType>::TakizukaAbePairing
 :
     PairingAlgorithm<CloudType>(dict,cloud,collisionModel,typeName)
 {
+    //nParticleEqWeight is zero if the species have different weights
     if(cloud.nParticleEqWeight() == 0.0)
        FatalErrorInFunction << "Model TakizukaAbe is only valid for equal weighted particles" << abort(FatalError);
 }
@@ -87,8 +88,10 @@ void Foam::TakizukaAbePairing<CloudType>::pairANDcollide()
                 if(j < i)//... so that we can break and the same species do not collide twice
                     break;
 
+                //Collision partner species
                 label beta = chargedSpecies[j];
 
+                //Number of particles in this cell
                 label nAlpha= sortedCellOccupancy[celli][alpha].size();
                 label nBeta = sortedCellOccupancy[celli][beta].size();
 

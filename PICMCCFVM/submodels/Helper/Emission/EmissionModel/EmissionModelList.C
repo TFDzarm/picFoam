@@ -44,7 +44,7 @@ Foam::EmissionModelList<CloudType>::EmissionModelList
 :
     PtrList<Foam::EmissionModel<CloudType>>()
 {
-    setupModels(dict, owner);
+    setupModels(dict, owner);//Setup the models
 }
 
 template<class CloudType>
@@ -52,6 +52,7 @@ void Foam::EmissionModelList<CloudType>::setupModels(const dictionary& dict, Clo
 {
     List<word> modelList(dict.lookup("EmissionModels"));
 
+    //Check for multiple defintions so we construct only once
     forAll(modelList,i)
     {
         forAllReverse(modelList,j)
@@ -64,7 +65,11 @@ void Foam::EmissionModelList<CloudType>::setupModels(const dictionary& dict, Clo
         }
 
     }
+
+    //Set the size of the model list
     this->setSize(modelList.size());
+
+    //Construct all models
     forAll(modelList,i)
     {
         word modelType = modelList[i];
@@ -105,12 +110,14 @@ Foam::EmissionModelList<CloudType>::~EmissionModelList()
 template<class CloudType>
 void Foam::EmissionModelList<CloudType>::emission()
 {
+    //Call the emission function for ever model in the list
     forAll(*this, i)
         this->operator[](i).emission();
 }
 template<class CloudType>
 void Foam::EmissionModelList<CloudType>::initilizeAll(label patchId, typename ParticleEmitter<CloudType>::VelocityModel model)
 {
+    //Call the initialisation function for every mode this will set up the emitter class
     forAll(*this, i)
         this->operator[](i).initilizeParticleEmitter(patchId,model);
 }
@@ -119,6 +126,8 @@ void Foam::EmissionModelList<CloudType>::initilizeAll(label patchId, typename Pa
 template<class CloudType>
 void Foam::EmissionModelList<CloudType>::collisionalEmission(typename CloudType::parcelType& p, typename CloudType::parcelType::trackingData& td)
 {
+    //Inform every model about the collision of particle p
+    //Models will check if the particle is on an associated patch
     forAll(*this, i)
         this->operator[](i).collisionalEmission(p,td);
 }

@@ -65,6 +65,7 @@ Foam::FieldWeigthing::FieldWeigthing
 
 // * * * * * * * * * * * * * * * * Selectors * * * * * * * * * * * * * * * * //
 
+//Construct the model and return a smart pointer
 Foam::autoPtr<Foam::FieldWeigthing>
 Foam::FieldWeigthing::New
 (
@@ -73,13 +74,14 @@ Foam::FieldWeigthing::New
     const fvMesh& mesh
 )
 {
-    word type(dict.lookup("FieldWeigthing"));
+    word type(dict.lookup("FieldWeigthing"));//Lookup selected model name
 
     Info<< "+ Selecting FieldWeigthing model " << type << endl;
 
     typename dictionaryConstructorTable::iterator cstrIter =
         dictionaryConstructorTablePtr_->find(type);
 
+    //Model not found, print all known models
     if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
         FatalErrorInFunction

@@ -63,20 +63,24 @@ void Foam::SentokuKempCorrection<CloudType>::correctVelocity(
     CloudType& cloud(this->owner());
     Random& rndGen(cloud.rndGen());
 
-    if(parcelP->nParticle() > parcelQ->nParticle())
+    if(parcelP->nParticle() > parcelQ->nParticle())//first case P has more particles than Q
     {
         scalar mass = cloud.constProps(parcelP->typeId()).mass();
         scalar deltaW = parcelQ->nParticle()/parcelP->nParticle();
 
+        //Lorentz factors
         scalar pre_gamma = 1.0/sqrt(1.0-sqr(mag(preUp)/cu::c.value()));
         scalar post_gamma = 1.0/sqrt(1.0-sqr(mag(parcelP->U())/cu::c.value()));
 
+        //Momentum
         vector pre_pP = mass*pre_gamma*preUp;
         vector post_pP = mass*post_gamma*parcelP->U();
 
+        //Energy
         scalar pre_eP = cu::c.value()*sqrt((pre_pP&pre_pP) + sqr(mass * cu::c.value()));//Total Energy
         scalar post_eP = cu::c.value()*sqrt((post_pP&post_pP) + sqr(mass * cu::c.value()));
 
+        //Corrected momentum and energy
         scalar afterColE = (1.0 - deltaW) * pre_eP + deltaW * post_eP;
         vector afterColMom = (1.0 - deltaW) * pre_pP + deltaW * post_pP;
 
@@ -85,6 +89,8 @@ void Foam::SentokuKempCorrection<CloudType>::correctVelocity(
         //Not 1+ afterColE ...! Because afterColE is the total energy
         scalar gamma_e = afterColE / (mass * sqr(cu::c.value()));
         scalar gamma_p = sqrt(1.0 + sqr(afterColMom_mag/(mass*cu::c.value())));
+
+        //This should be the case, we correct this...
         if(gamma_p < gamma_e)
         {
             scalar delta_p = mass * cu::c.value() * sqrt(sqr(gamma_e)-sqr(gamma_p));
@@ -111,7 +117,7 @@ void Foam::SentokuKempCorrection<CloudType>::correctVelocity(
             parcelP->U() = p_scat/(mass*gamma_scat);//apply correction
         }
     }
-    else if(parcelP->nParticle() < parcelQ->nParticle())
+    else if(parcelP->nParticle() < parcelQ->nParticle())//first case Q has more particles than P
     {
         scalar mass = cloud.constProps(parcelQ->typeId()).mass();
 

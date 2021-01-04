@@ -51,6 +51,7 @@ Foam::KimCarlsonCrossSection<CloudType,Type>::KimCarlsonCrossSection
 
     namespace cm = constant::mathematical;
 
+    //Create an interpolation table
     scalar r_e = 2.8179403227e-15;
     label tableSize = 100;
     //1eV-10MeV
@@ -62,13 +63,16 @@ Foam::KimCarlsonCrossSection<CloudType,Type>::KimCarlsonCrossSection
     {
         ionizationk0CrossSection_ = List<scalar>(tableSize,0.0);
 
+        //Table index i
         for(label i = 0; i < tableSize; i++)
         {
             E = ::exp( scalar(i)/ tableStepSize);
             N = 1;
+
+            //All orbitals k up to the ionization state
             for(label k = 0; k < atomicNumber_-Zstar; k++)
             {
-                Bk = bindingEnergyCarlson(Zstar,k);
+                Bk = bindingEnergyCarlson(Zstar,k);//Binding energy
                 if(k < atomicNumber_-Zstar-1) {
                     if(Bk == bindingEnergyCarlson(Zstar,k+1)){
                         N++;
@@ -109,6 +113,7 @@ Foam::KimCarlsonCrossSection<CloudType,Type>::KimCarlsonCrossSection
 template<class CloudType, Foam::crossSectionType Type>
 scalar Foam::KimCarlsonCrossSection<CloudType,Type>::bindingEnergyCarlson(label Zstar, label k)
 {
+    //Binding energy of a given orbital k and ionization state Zstar
     return ionizationEneries_[Zstar] - bindingEneries_[atomicNumber_-Zstar-1] + bindingEneries_[k];
 }
 

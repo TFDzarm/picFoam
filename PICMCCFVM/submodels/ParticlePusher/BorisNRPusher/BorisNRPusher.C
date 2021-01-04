@@ -39,6 +39,7 @@ Foam::BorisNRPusher<CloudType>::BorisNRPusher
     ParticlePusher<CloudType>(cloud),
     calcMagneticRotation_(false)
 {
+    //Check the magentic field if we have to calculate rotations
     if(cloud.maxwellSolver().type() == "ElectroStatic" || cloud.maxwellSolver().type() == "none")
     {
         const volVectorField& B(cloud.magneticField());

@@ -67,7 +67,7 @@ class WallReflectionModel;
 template<class CloudType>
 class BoundaryModel;
 
-//-NEW- PIC Submodels
+//PIC Submodels
 template<class CloudType>
 class MaxwellSolver;
 
@@ -380,7 +380,7 @@ public:
                 //  parcel (on equal weight / else == 0.0)
                 inline scalar nParticleEqWeight() const;
 
-                //-NEW- Return the sorted cell occupancy addressing
+                //- Return the sorted cell occupancy addressing
                 inline const List<List<DynamicList<ParcelType*>>>&
                     sortedCellOccupancy() const;
 
@@ -727,7 +727,7 @@ public:
             //- Calculate the volume field data
             void calculateFields();
 
-            //- Evolve the cloud (move, collide)
+            //- Evolve the cloud (move, collide, ...)
             void evolve();
 
             //- Clear the Cloud

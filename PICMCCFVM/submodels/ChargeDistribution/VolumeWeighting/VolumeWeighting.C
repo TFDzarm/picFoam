@@ -51,6 +51,7 @@ Foam::VolumeWeighting<CloudType>::VolumeWeighting
     weights_.clear();
     weights_.setSize(mesh.nCells());
 
+    //For every cell calculate the distance from its center to each point constructing the cell and save it as weight
     const labelListList& cellPoints = mesh.cellPoints();
     forAll(cellPoints,celli)
     {
@@ -61,12 +62,14 @@ Foam::VolumeWeighting<CloudType>::VolumeWeighting
         {
             label pointi = pointList[idx];
 
+            //Distance cell center and vertex
             weights_[celli][idx] = mag(points[pointi] - cellCentres[celli]);
+            //Sum of all distances
             sumWeights[pointi] += weights_[celli][idx];
         }
     }
 
-
+    //Sync the sum, accounting for periodic boundaries
     mesh.globalData().syncPointData
     (
         sumWeights,
@@ -74,6 +77,7 @@ Foam::VolumeWeighting<CloudType>::VolumeWeighting
         mapDistribute::transform()
     );
 
+    //Calculate the weight
     forAll(cellPoints,celli)
     {
         const labelList& pointList = cellPoints[celli];
@@ -111,6 +115,8 @@ void Foam::VolumeWeighting<CloudType>::add
 
     //This is the fraction of the total charge in celli that belongs only to celli
     ccData_[tetIs.cell()] += coordinates[0]*value;
+
+    //Add the fraction of the charge to the vertices
     for(label i = 0; i < 3; i ++)
     {
         vertexData_[triIs[i]] += coordinates[i+1]*value;
@@ -131,7 +137,7 @@ void Foam::VolumeWeighting<CloudType>::reset()
 template<class CloudType>
 void Foam::VolumeWeighting<CloudType>::update()
 {
-
+    //COM the weighted charges, accounts for periodic boundaries
     this->cloud().mesh().globalData().syncPointData
     (
         vertexData_,
@@ -142,6 +148,7 @@ void Foam::VolumeWeighting<CloudType>::update()
     const scalarField& cellVolume = this->cloud().mesh().cellVolumes();
     const labelListList& cellPoints = this->cloud().mesh().cellPoints();
 
+    //Weight back the charge from the vertices to the cell center
     forAll(cellPoints,celli)
     {
         const scalar& V = cellVolume[celli];

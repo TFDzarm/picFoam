@@ -46,18 +46,25 @@ License
 using namespace Foam::constant;
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
 
+/*
+Foam::PICCloud<ParcelType>::buildConstProps() is called in the PICCloud constructor.
+
+This reads the "moleculeProperties" entry in the constant/picProperties file and initializes the list containing constant properties for each species.
+Additionally, lists linking species together e.g. a neutal species with its ion (used in the collision procedures) are initialized.
+*/
 template<class ParcelType>
 void Foam::PICCloud<ParcelType>::buildConstProps()
 {
     Info<< nl << "Constructing constant properties for" << endl;
     constProps_.setSize(typeIdList_.size());
 
+    //Read the sub-dictionary entry "moleculeProperties" from constant/picProperties
     dictionary moleculeProperties
     (
         particleProperties_.subDict("moleculeProperties")
     );
 
-    //Print species info, check fpr equal particle weight
+    //Print species info, check for equal particle weight
     scalar eqWeight = 0.0;
     forAll(typeIdList_, i)
     {
@@ -76,11 +83,12 @@ void Foam::PICCloud<ParcelType>::buildConstProps()
         << "    |_ solveMovement: " << (constProps_[i].solveMovement() ? "yes" : "no")
         << (i == typeIdList_.size()-1 ? "\n" : "") << endl;
 
-        if(i == 0)
+        if(i == 0)//fist value
             eqWeight = constProps_[i].nParticle();
         else if(constProps_[i].nParticle() != eqWeight)
             eqWeight = 0.0;
     }
+    //If all species have the same weight this varibales is set this weight, else it is zero. This used to check if some of collision algorithm that are only applicable to equal weighted particle species can be used.
     nParticleEqWeight_ = eqWeight;
 
     //Read species relations used in CollisionModels e.g. for ionization
@@ -91,6 +99,8 @@ void Foam::PICCloud<ParcelType>::buildConstProps()
 
     word electronType = relations.lookup("electronTypeId");
     electronTypeId_ = findIndex(typeIdList_,electronType);
+
+    //Relations of species: ions -> neutral, neutral -> ions, not existing == -1
     neutralTypeList_.setSize(typeIdList_.size(),-1);
     ionTypeList_.setSize(typeIdList_.size(),-1);
 
@@ -118,6 +128,8 @@ void Foam::PICCloud<ParcelType>::buildConstProps()
             }
         }
     }
+
+    //Lists for different species groups...(ions, neutrals, charged)
     DynamicList<label> cS;
     DynamicList<label> nS;
     DynamicList<label> iS;
@@ -152,7 +164,7 @@ void Foam::PICCloud<ParcelType>::buildConstProps()
 
     if(index > 0)
     {
-        //init
+        //Initialize the fields for each species definied in "fieldCalculation"
         N_.setSize(index);
         momentumSpecies_.setSize(index);
         linearKESpecies_.setSize(index);
@@ -287,6 +299,12 @@ void Foam::PICCloud<ParcelType>::buildConstProps()
 }
 
 
+/*
+Foam::PICCloud<ParcelType>::buildCellOccupancy() is called in the evolve function and the constructor.
+
+This updates the field sortedCellOccupancy_ which containes the pointers to each parcel contained within specific cells.
+Additionally the density fields of species defined by the fieldCalculation are updated.
+*/
 template<class ParcelType>
 void Foam::PICCloud<ParcelType>::buildCellOccupancy()
 {
@@ -318,6 +336,11 @@ void Foam::PICCloud<ParcelType>::buildCellOccupancy()
 }
 
 
+/*
+Foam::PICCloud<ParcelType>::setupParticleProperties() is called in the constructor.
+
+This calculates the charge of each particle once at he beginning of the simulation since we only save the ionization state not the actual charge value of each parcel.
+*/
 template<class ParcelType>
 void Foam::PICCloud<ParcelType>::setupParticleProperties()
 {
@@ -328,10 +351,16 @@ void Foam::PICCloud<ParcelType>::setupParticleProperties()
     }
 }
 
+/*
+Foam::PICCloud<ParcelType>::setModels() is called in the constructor.
+
+This initializes all submodels and verifies if the simulation uses equal weighted species or not.
+*/
 template<class ParcelType>
 void Foam::PICCloud<ParcelType>::setModels()
 {
     Info << "Initializing submodels" << nl << "----------------------" << endl;
+    //Pick the charge distribution model: Charge interpolation from parcel to the cells. 
     chargeDensity_.reset(
         ChargeDistribution<PICCloud<ParcelType>>::New(
             "rhoCharge",
@@ -339,6 +368,7 @@ void Foam::PICCloud<ParcelType>::setModels()
             *this
         ).ptr()
     );
+    //Pick the interpolation model from the electric field to the parcels.
     eField_.reset(
             FieldWeigthing::New(
             "E",
@@ -346,6 +376,7 @@ void Foam::PICCloud<ParcelType>::setModels()
             mesh_
         ).ptr()
     );
+    //Pick the background collision model.
     //Load this one before collision models!
     backgroundGas_.reset(
         BackgroundGasModel<PICCloud<ParcelType>>::New
@@ -354,6 +385,7 @@ void Foam::PICCloud<ParcelType>::setModels()
             *this
         ).ptr()
     );
+    //Pick the merging algortihm.
     particleMerging_.reset(
         ParticleMerging<PICCloud<ParcelType>>::New
         (
@@ -362,9 +394,10 @@ void Foam::PICCloud<ParcelType>::setModels()
         ).ptr()
     );
 
+    //Check if the simulation uses equal weight.
     if(particleMerging_->active())
-        nParticleEqWeight_ = 0.0;
-    if(!particleMerging_->active() && backgroundGas_->active() && backgroundGas_->nParticle() != nParticleEqWeight_)
+        nParticleEqWeight_ = 0.0;//if we merge particles there cannot be equal weigths...
+    if(!particleMerging_->active() && backgroundGas_->active() && backgroundGas_->nParticle() != nParticleEqWeight_)//Background model with different weight
         nParticleEqWeight_ = 0.0;
 
     //Check before collision models are initilized.... !!!
@@ -390,7 +423,7 @@ void Foam::PICCloud<ParcelType>::setModels()
         Info << "|->    Particles have different weighting factors" << nl << endl;
 
 
-
+    //Pick the binary collision model (neutal-neutal and neutal-ion).
     binaryCollisionModel_.reset(
         BinaryCollisionModel<PICCloud<ParcelType>>::New
         (
@@ -398,6 +431,7 @@ void Foam::PICCloud<ParcelType>::setModels()
             *this
         ).ptr()
     );
+    //Pick the coulomb collision model (charged-charged).
     coulombCollisionModel_.reset(
         CoulombCollisionModel<PICCloud<ParcelType>>::New
         (
@@ -405,6 +439,7 @@ void Foam::PICCloud<ParcelType>::setModels()
             *this
         ).ptr()
     );
+    //Pick the electron-neutral collision model.
     electronNeutralCollisionModel_.reset(
         ElectronNeutralCollisionModel<PICCloud<ParcelType>>::New
         (
@@ -412,6 +447,7 @@ void Foam::PICCloud<ParcelType>::setModels()
             *this
         ).ptr()
     );
+    //Pick the solver for the electric field.
     maxwellSolver_.reset(
         MaxwellSolver<PICCloud<ParcelType>>::New
         (
@@ -419,6 +455,7 @@ void Foam::PICCloud<ParcelType>::setModels()
             *this
         ).ptr()
     );
+    //Pick the particle pusher algortihm.
     particlePusher_.reset(
         ParticlePusher<PICCloud<ParcelType>>::New
         (
@@ -427,6 +464,7 @@ void Foam::PICCloud<ParcelType>::setModels()
         ).ptr()
     );
 
+    //Pick the wall interaction model.
     wallReflectionModel_.reset(
         WallReflectionModel<PICCloud<ParcelType>>::New
         (
@@ -434,15 +472,18 @@ void Foam::PICCloud<ParcelType>::setModels()
             *this
         ).ptr()
     );
-
+    
+    //Pick boundary models for patches e.g. circuit models.
     boundaryModels_.setupModels(
         particleProperties_.subDict("BoundaryModels").subDict("PatchBoundaryModels"),
         *this
     );
+    //Boundary events, mainly for diagnotic purpose.
     boundaryEvents_.setupModels(
         particleProperties_.subDict("BoundaryModels").subOrEmptyDict("PatchEventModels"),
         *this
     );
+    //Pick diagnostics models.
     parcelDiagnostics_.setupModels(
         particleProperties_.subDict("Diagnostics"),
         *this
@@ -450,6 +491,11 @@ void Foam::PICCloud<ParcelType>::setModels()
 
 }
 
+/*
+Foam::PICCloud<ParcelType>::collisions() is called in the evolve function.
+
+Call all collision submodels.
+*/
 template<class ParcelType>
 void Foam::PICCloud<ParcelType>::collisions()
 {
@@ -463,7 +509,11 @@ void Foam::PICCloud<ParcelType>::collisions()
         binaryCollision().handleCollisions();
 }
 
+/*
+Foam::PICCloud<ParcelType>::resetFields() is called in the evolve function.
 
+Reset fields calculated every time step from the parcel distribution.
+*/
 template<class ParcelType>
 void Foam::PICCloud<ParcelType>::resetFields()
 {
@@ -498,7 +548,11 @@ void Foam::PICCloud<ParcelType>::resetFields()
     //Do not reset j_ and rhoCharge_!!! This is done in calculateFields()
 }
 
+/*
+Foam::PICCloud<ParcelType>::calculateFields() is called in the evolve function.
 
+Calculated fields every time step from the parcel distribution. Some field are resetted here, which are needed in between calls to resetFields() and this functions.
+*/
 template<class ParcelType>
 void Foam::PICCloud<ParcelType>::calculateFields()
 {
@@ -529,6 +583,7 @@ void Foam::PICCloud<ParcelType>::calculateFields()
     scalarField& linearKE = linearKE_.primitiveFieldRef();
     vectorField& momentum = momentum_.primitiveFieldRef();
 
+    //Go through the linked list and calculate the properties...
     forAllConstIter(typename PICCloud<ParcelType>, *this, iter)
     {
         const ParcelType& p = iter();
@@ -538,12 +593,18 @@ void Foam::PICCloud<ParcelType>::calculateFields()
         //Add particle to charge density model
         cD.add(p);
 
+        //Number of molecules
         rhoN[celli] += p.nParticle();
+        //Mass of the parcels
         rhoM[celli] += p.nParticle()*constProps(p.typeId()).mass();
+        //Number of parcel
         picRhoN[celli]++;
+        //Linear kinetic energy
         linearKE[celli] += 0.5*p.nParticle()*constProps(p.typeId()).mass()*(p.U() & p.U());
+        //Momentum
         momentum[celli] += p.nParticle()*constProps(p.typeId()).mass()*p.U();
 
+        //Calculated species specific fields.
         if(fId >= 0) {
             jSpecies_[fId][celli] += p.nParticle()*p.charge()*p.U();
             rhoChargeSpecies_[fId][celli] += p.nParticle()*p.charge();
@@ -557,6 +618,7 @@ void Foam::PICCloud<ParcelType>::calculateFields()
         j[celli] += p.nParticle()*p.charge()*p.U();
     }
 
+    //Divide by the cell volume field.
     rhoN /= mesh().cellVolumes();
     rhoN_.correctBoundaryConditions();
 
@@ -606,6 +668,11 @@ void Foam::PICCloud<ParcelType>::calculateFields()
 
 // * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * * //
 
+/*
+Foam::PICCloud<ParcelType>::addNewParcel
+
+This function is used to add a parcel to the cloud.
+*/
 template<class ParcelType>
 ParcelType* Foam::PICCloud<ParcelType>::addNewParcel
 (
@@ -621,13 +688,18 @@ ParcelType* Foam::PICCloud<ParcelType>::addNewParcel
     p->charge() = constProps(typeId).charge();
     p->nParticle() = constProps(typeId).nParticle();
 
-    this->addParticle(p);
+    this->addParticle(p);//PICCloud ist a double linked list, add the particle
     return p;
 }
 
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
+/*
+Foam::PICCloud<ParcelType>::PICCloud
+
+The constructor: Setup all members of the class.
+*/
 template<class ParcelType>
 Foam::PICCloud<ParcelType>::PICCloud
 (
@@ -652,7 +724,7 @@ Foam::PICCloud<ParcelType>::PICCloud
         )
     ),
     typeIdList_(particleProperties_.subDict("SolverSettings").lookup("typeIdList")),
-    nParticleEqWeight_(0.0),//readScalar(particleProperties_.subDict("SolverSettings").lookup("nEquivalentParticles"))),
+    nParticleEqWeight_(0.0),
     chargedSpecies_(),
     neutralSpecies_(),
     ionSpecies_(),
@@ -753,18 +825,6 @@ Foam::PICCloud<ParcelType>::PICCloud
     chargeDensity_(),
     N_(),
     eField_(),
-    /*E_
-    (
-        IOobject
-        (
-            "E",
-            mesh_.time().timeName(),
-            mesh_,
-            IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
-        ),
-        mesh_
-    ),*/
     phiE_
         (
             IOobject
@@ -876,35 +936,46 @@ Foam::PICCloud<ParcelType>::PICCloud
     boundaryModels_(*this),
     parcelDiagnostics_(*this)
 {
+    //This function calculates an average cell length scale used to warnings related to the cell size being bigger than the Debye length.
     calculateCellLengthScales();
 
+    //Read the space charge density provided in constant/picProperties
     readSpaceChargeDensity();
 
+    //Setup the size if the cell occupancy field
     for(label i=0;i<mesh_.nCells();i++)
     {
         sortedCellOccupancy_[i].setSize(typeIdList_.size());
     }
 
+    //Build constant parcel properties
     buildConstProps();
 
+    //Read lagrangian fields from the time directory if needed
     if (readFields)
     {
         ParcelType::readFields(*this);
     }
 
-    //-NEW- setup when the typeId is known(was read)
+    //Setup parcel properties(charge) when the typeId is known(was read)
     setupParticleProperties();
 
     //Setup all submodels at this point constProps are known
     setModels();
 
+    //Build the cell occupancy
     buildCellOccupancy();
 
-    //inital update
+    //Inital update of the electric field
     this->eField_().update();
 }
 
+/*
+Foam::PICCloud<ParcelType>::PICCloud
 
+The constructor: Setup all members of the class.
+This one is called by picInitialise.
+*/
 template<class ParcelType>
 Foam::PICCloud<ParcelType>::PICCloud
 (
@@ -929,7 +1000,7 @@ Foam::PICCloud<ParcelType>::PICCloud
         )
     ),
     typeIdList_(particleProperties_.subDict("SolverSettings").lookup("typeIdList")),
-    nParticleEqWeight_(0.0),//readScalar(particleProperties_.subDict("SolverSettings").lookup("nEquivalentParticles"))),
+    nParticleEqWeight_(0.0),
     chargedSpecies_(),
     neutralSpecies_(),
     ionSpecies_(),
@@ -1167,10 +1238,13 @@ Foam::PICCloud<ParcelType>::PICCloud
     parcelDiagnostics_(*this)
 {
 
+    //This function calculates an average cell length scale used for warnings related to the cell size being bigger than the Debye length.
     calculateCellLengthScales();
 
+    //Read the space charge density provided in constant/picProperties
     readSpaceChargeDensity();
 
+    //Remove already existing particles?
     bool clearParts = readBool(picInitialiseDict.lookup("clearParticles"));
     if(clearParts) {
         clear();
@@ -1178,19 +1252,22 @@ Foam::PICCloud<ParcelType>::PICCloud
     else
         ParcelType::readFields(*this);
 
+    //Setup the size if the cell occupancy field
     for(label i=0;i<mesh_.nCells();i++)
     {
         sortedCellOccupancy_[i].setSize(typeIdList_.size());
     }
 
+    //Build constant parcel properties
     buildConstProps();
 
+    //Setup parcel properties(charge) when the typeId is known(was read)
     setupParticleProperties();
 
     //Setup all submodels at this point constProps are known
     setModels();
 
-    //inital update
+    //Inital update of the electric field
     this->eField_().update();
 }
 
@@ -1204,23 +1281,34 @@ Foam::PICCloud<ParcelType>::~PICCloud()
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
+/*
+Foam::PICCloud<ParcelType>::calculateCellLengthScales
+
+Calculate the cell length scale. Used to warn the used if the cell is bigger than the Debye length.
+*/
 template<class ParcelType>
 void Foam::PICCloud<ParcelType>::calculateCellLengthScales()
 {
+    //In 3D simulation this is simply the cube root of the cells volume
     cellLengthScale_ = mag(cbrt(mesh_.V()));
-    if(mesh_.nSolutionD() < 3)//There is probably a better way calculating this... is the value okay for other cells than hexas??
+
+    //In 1D,2D ignore invalid geometric directions
+    if(mesh_.nSolutionD() < 3)//There is probably a better way calculating this...
     {
         const volVectorField& C = mesh_.C();
         const surfaceVectorField& Cf = mesh_.Cf();
 
         vectorField cellLength (C.size(),Zero);
 
+        //Get valid coords
         vector validCoords(1.0,1.0,1.0);
         meshTools::constrainDirection(mesh_, mesh_.solutionD(), validCoords);
 
+        //For all cells...
         forAll(mesh_.cells(),celli)
         {
             cell c = mesh_.cells()[celli];
+            //and for all the faces of the cell...
             forAll(c,fi)
             {
 
@@ -1229,6 +1317,7 @@ void Foam::PICCloud<ParcelType>::calculateCellLengthScales()
                 if(facei >= Cf.size())//only internal faces
                     continue;
 
+                //add the distance to the cells face
                 cellLength[celli] += vector(
                                 mag(Cf[facei].x()-C[celli].x()),
                                 mag(Cf[facei].y()-C[celli].y()),
@@ -1237,6 +1326,8 @@ void Foam::PICCloud<ParcelType>::calculateCellLengthScales()
             }
 
         }
+
+        //Add the distance to the boundary faces, which are saved in a different list.
         forAll(mesh_.boundary(),patchi)
         {
             const labelUList& pOwner = mesh_.boundary()[patchi].faceCells();
@@ -1252,7 +1343,7 @@ void Foam::PICCloud<ParcelType>::calculateCellLengthScales()
             }
         }
 
-
+        //Set the cell length in invalid directions to zero, for the valid directions calculate the absolut value directly (1D) or calculate the length scale the via the area (2D)
         forAll(cellLength,i) {
                 cellLength[i].x() *= validCoords.x();
                 cellLength[i].y() *= validCoords.y();
@@ -1262,14 +1353,14 @@ void Foam::PICCloud<ParcelType>::calculateCellLengthScales()
                     cellLengthScale_[i] = mag(cellLength[i]);
                 }
                 else {
-                    cellLength[i] += (-validCoords+vector(1.0,1.0,1.0));
+                    cellLength[i] += (-validCoords+vector(1.0,1.0,1.0));//Set invalid dirs to one so we do not mulitply by zero
                     scalar area = cellLength[i].x()*cellLength[i].y()*cellLength[i].z();
                     cellLengthScale_[i] = sqrt(area);
                 }
         }
     }
+    //Calculate an average length scale and communicate for parallel runs
     avgcellLengthScale_ = average(cellLengthScale_);
-
     if(Pstream::parRun())
     {
         reduce(avgcellLengthScale_,sumOp<scalar>());
@@ -1277,9 +1368,15 @@ void Foam::PICCloud<ParcelType>::calculateCellLengthScales()
     }
 }
 
+/*
+Foam::PICCloud<ParcelType>::readSpaceChargeDensity()
+
+Read the space charge and calculate the space charge density field.
+*/
 template<class ParcelType>
 void Foam::PICCloud<ParcelType>::readSpaceChargeDensity()
 {
+    //Get the number of cells in the mesh
     label cellCount = mesh_.cells().size();
     reduce(cellCount,sumOp<label>());
 
@@ -1287,6 +1384,7 @@ void Foam::PICCloud<ParcelType>::readSpaceChargeDensity()
     scalar spCh = readScalar(particleProperties_.subDict("SolverSettings").lookup("spaceCharge"));
     Info << nl << "Read space charge value of " << spCh << " As" << endl;
 
+    //The space charge is distributed uniformly to all cells...
     spCh/=scalar(cellCount);
 
     forAll(mesh_.cells(), cellI)
@@ -1297,46 +1395,73 @@ void Foam::PICCloud<ParcelType>::readSpaceChargeDensity()
     scalarField& spaceChargeDensity = spaceChargeDensity_.primitiveFieldRef();
     spaceChargeDensity/=mesh_.cellVolumes();
 }
+
+/*
+Foam::PICCloud<ParcelType>::evolve()
+
+Evolve the PIC cloud. This one is called by picFoam every time step.
+*/
 template<class ParcelType>
 void Foam::PICCloud<ParcelType>::evolve()
 {
+    //Tracking data. Is to keep track of properties during the parcels movement.
     typename ParcelType::trackingData td(*this);
 
+    //Reset fields.
     resetFields();
 
+    //Call the boundary model to inject new parcels into the domian.
     boundaryModels().injection();
 
+    //If the velocity of one parcel is too high, warn once on each processor. After this, set this variable too false, so we do not spam stdout.
     printVelocityWarning_ = true;
+    //Moves the parcels. Calls into the Cloud base class which then calls back to Foam::PICParcel<ParcelType>::move.
     Cloud<ParcelType>::move(*this, td, mesh_.time().deltaTValue());
 
+    //Call the boundary event model after all parcels have been moved.
     boundaryEventModels().postMove();
 
+    //Build the cell occupancy.
     buildCellOccupancy();
 
+    //Update the background gas.
     backgroundGas().update();
 
+    //Call all collision algorithm.
     collisions();
 
+    //Calculate the fields.
     calculateFields();
 
+    //Update boundary models before the new electric field is calculated (used by some circuit models).
     boundaryModels().preUpdate_Boundary();
 
+    //Solve the electric field.
     maxwellSolver().solveFields();
 
+    //Update boundary models after the electric field has been updated.
     boundaryModels().postUpdate_Boundary();
 
     //Update joule heat
     jE_ = j_ & eField_().field();
 
+    //Merge parcels
     particleMerging().checkAndMerge();
 }
 
 
+/*
+Foam::PICCloud<ParcelType>::info()
+
+Calculated and print diagnostics.
+*/
 template<class ParcelType>
 void Foam::PICCloud<ParcelType>::info()
 {
+    //Print boundary event info.
     boundaryEventModels().info();
 
+    //Get number the of parcels.
     label nPICParticles = this->size();
     reduce(nPICParticles, sumOp<label>());
 
@@ -1347,15 +1472,21 @@ void Foam::PICCloud<ParcelType>::info()
               << nPICParticles
               << nl << "----" << endl;//flush
 
+    //If we have parcels print diagnostics.
     if(nPICParticles)
         Diagnostics().info();
 
+    //During the simulation, if required warn if the cell is larger than the average debye length.
     if(checkDebyeLength_ && !isInitializing())
     {
+        //Calculate the debye length.
         tmp<volScalarField::Internal> debye = debyeField();
+
+        //Get the average value.
         scalar avgDebyeL = average(debye.ref().field());
         if(Pstream::parRun())
         {
+            //Average over all processor in a parallel run.
             reduce(avgDebyeL,sumOp<scalar>());
             avgDebyeL /= Pstream::nProcs();
         }
@@ -1366,15 +1497,22 @@ void Foam::PICCloud<ParcelType>::info()
         {
             Info << "    => Average cell size is larger than the average debye length!" << endl;
         }
+        //Write the debye field if it's time for this.
         if (this->db().time().writeTime())
             debye.ref().write();
     }
+    
+    //During the simulation, if required warn if the time step is to big for the current plasma frequency.
     if(checkPlasmaFrequency_ && !isInitializing())
     {
+        //Calculate the plasma frequency.
         tmp<volScalarField::Internal> plasmaFreq = plasmaFreqField();
+
+        //Get the average...
         scalar avgPlasmaFreq = average(plasmaFreq.ref().field());
         if(Pstream::parRun())
         {
+            //Average over all processor in parallel run.
             reduce(avgPlasmaFreq,sumOp<scalar>());
             avgPlasmaFreq /= Pstream::nProcs();
         }
@@ -1386,7 +1524,11 @@ void Foam::PICCloud<ParcelType>::info()
     }
 }
 
+/*
+Foam::PICCloud<ParcelType>::equipartitionLinearVelocity()
 
+Sample a velocity according to the Maxwell-Boltzmann distribution.
+*/
 template<class ParcelType>
 Foam::vector Foam::PICCloud<ParcelType>::equipartitionLinearVelocity
 (
@@ -1399,6 +1541,11 @@ Foam::vector Foam::PICCloud<ParcelType>::equipartitionLinearVelocity
        *rndGen_.sampleNormal<vector>();
 }
 
+/*
+Foam::PICCloud<ParcelType>::dumpParticle()
+
+Dump parcels to a file.
+*/
 template<class ParcelType>
 void Foam::PICCloud<ParcelType>::dumpParticle() const
 {
@@ -1437,6 +1584,10 @@ void Foam::PICCloud<ParcelType>::autoMap(const mapPolyMesh& mapper)
     //Cloud<ParcelType>::autoMap(mapper);
 }
 
+/*
+Foam::PICCloud<ParcelType>::plasmaFreqField()
+Calculate the plasma frequency
+*/
 template<class ParcelType>
 tmp<volScalarField::Internal> Foam::PICCloud<ParcelType>::plasmaFreqField() const
 {
@@ -1452,22 +1603,27 @@ tmp<volScalarField::Internal> Foam::PICCloud<ParcelType>::plasmaFreqField() cons
    const typename ParcelType::constantProperties& cP = constProps(electronTypeId_);
    const List<List<DynamicList<ParcelType*>>>& sortedCellOccupancy(this->sortedCellOccupancy());
 
+   //Go through all cells...
    forAll(mesh_.cells(),celli)
    {
        //Does not include new ionized parcels if called after collision...
-       forAll(sortedCellOccupancy[celli][electronTypeId_],parti)
+       forAll(sortedCellOccupancy[celli][electronTypeId_],parti)//Only electrons...
        {
            ParcelType* p = sortedCellOccupancy[celli][electronTypeId_][parti];
-           if(p == nullptr)
+           if(p == nullptr)//sortedCellOccupancy wasn't re-evaluated some parcels are removed e.g. by ionization code.
                continue;
-           plasmaFrequency[celli] += p->nParticle();
+           plasmaFrequency[celli] += p->nParticle();//Add the parcel weight.
        }
-       plasmaFrequency[celli] /= mesh_.cellVolumes()[celli];
+       plasmaFrequency[celli] /= mesh_.cellVolumes()[celli];//Divide by the volume => Get the number density.
    }
-   plasmaFrequency = sqrt(plasmaFrequency*cP.charge()*cP.charge()/constant::electromagnetic::epsilon0.value()/cP.mass());
+   plasmaFrequency = sqrt(plasmaFrequency*cP.charge()*cP.charge()/constant::electromagnetic::epsilon0.value()/cP.mass());//Calculate the plasma frequency
    return tplasmaFrequency;
 }
 
+/*
+Foam::PICCloud<ParcelType>::debyeField()
+Calculate the field containing the Debye length for each cell.
+*/
 template<class ParcelType>
 tmp<volScalarField::Internal> Foam::PICCloud<ParcelType>::debyeField() const
 {
@@ -1482,9 +1638,11 @@ tmp<volScalarField::Internal> Foam::PICCloud<ParcelType>::debyeField() const
       volScalarField::Internal& debyeField = tdebyeField.ref();
 
         const List<List<DynamicList<ParcelType*>>>& sortedCellOccupancy(this->sortedCellOccupancy());
+        //For all cells...
         forAll(mesh_.cells(),celli)
         {
             scalar debye(0.0);
+            //For all charged species...
             forAll(chargedSpecies(),si)
             {
                 scalar  T(0.0), n(0.0);
@@ -1499,7 +1657,7 @@ tmp<volScalarField::Internal> Foam::PICCloud<ParcelType>::debyeField() const
                 forAll(sortedCellOccupancy[celli][speci],parti)
                 {
                     ParcelType* p = sortedCellOccupancy[celli][speci][parti];
-                    if(p == nullptr)
+                    if(p == nullptr)//ignore removed parcels
                         continue;
 
                     vSqr += (p->U() & p->U())*p->nParticle();
@@ -1510,20 +1668,26 @@ tmp<volScalarField::Internal> Foam::PICCloud<ParcelType>::debyeField() const
                 if(n <= 0.0) {
                     continue;
                 }
+                //Average velocity (drift velocity).
                 v /= n;
+                //Average charge.
                 charge /= n;
+                //Calculate the average squared velocity.
                 vSqr /= n;
+                //Number density of the species.
                 n /= mesh().cellVolumes()[celli];
 
+                //Calculate the temperature based on the Maxwell-Boltzmann distribution.
                 T = mass/(3.0*constant::physicoChemical::k.value())*(vSqr-(v&v));
 
                 if(T <= 0.0) {
                     continue;
                 }
 
+                //Calculate the Debye length.
                 debye += n*charge*charge/constant::electromagnetic::epsilon0.value() * 1.0/(T*constant::physicoChemical::k.value());
             }
-            if(debye > 0.0)
+            if(debye > 0.0)//If we have a valid value update the cell value of the field.
                 debyeField[celli] = ::sqrt(1/debye);
         }
         return tdebyeField;

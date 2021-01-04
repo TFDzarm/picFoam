@@ -48,6 +48,7 @@ Foam::RajuElasticCS<CloudType,Type>::RajuElasticCS
     /// Total and Elastic CrossSection
     //////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    //Create interpolation table from datasets
     label tableSize = 100;
     scalar tableStepSize = (tableSize-1)/::log(1000/0.08);
 
@@ -70,6 +71,7 @@ Foam::RajuElasticCS<CloudType,Type>::RajuElasticCS
         elasticCS.append(Qel);
     }
     elasticCS.append(raju_Qel.last());
+    //Save interpolation table
     elasticCS_.transfer(elasticCS);
 }
 

@@ -54,7 +54,7 @@ Foam::BerkeleyHeliumExcitationCS<CloudType,Type>::~BerkeleyHeliumExcitationCS()
 template<class CloudType, Foam::crossSectionType Type>
 Foam::scalar Foam::BerkeleyHeliumExcitationCS<CloudType,Type>::crossSection(scalar eVEnergy) const
 {
-    if(eVEnergy < threshold())
+    if(eVEnergy < threshold())//Cross section is zero below the threshold
         return 0.0;
     else if(eVEnergy < 27.0)
         return 2.08e-22*(eVEnergy-threshold());

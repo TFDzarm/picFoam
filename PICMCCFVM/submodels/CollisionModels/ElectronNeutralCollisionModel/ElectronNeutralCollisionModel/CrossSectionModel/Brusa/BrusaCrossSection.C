@@ -35,6 +35,7 @@ Foam::BrusaCrossSectionBase::BrusaCrossSectionBase
 )
 :    s_(undefined)
 {
+    //Which dataset do we use?
     word species = dict.lookup("species");
     if(species == "Ne")
         s_ = Ne;
@@ -98,14 +99,16 @@ Foam::BrusaCrossSection<CloudType,Foam::crossSectionType::ElectronElasticCS>::~B
 template<class CloudType>
 Foam::scalar Foam::BrusaCrossSection<CloudType,Foam::crossSectionType::ElectronElasticCS>::crossSection(scalar eVEnergy) const
 {
+    //Cut of where the model is not valid
     if(eVEnergy < minEel_[s_])
         eVEnergy = minEel_[s_];
 
     if(eVEnergy > maxEel_[s_])
         eVEnergy=maxEel_[s_];//FIXME: Should this be done?
 
-    eVEnergy/=1000.0;//keV
+    eVEnergy/=1000.0;//in keV
 
+    //Calculate the cross section according to Brusa
     scalar Qel = 1.0/(R1_[s_]*(S1_[s_]+eVEnergy)) + 1.0/(R2_[s_]*(S2_[s_]+eVEnergy));
     if(S2_[s_] > 0.0)
     {
@@ -150,6 +153,7 @@ Foam::BrusaCrossSection<CloudType,Foam::crossSectionType::ElectronExciationCS>::
 template<class CloudType>
 Foam::scalar Foam::BrusaCrossSection<CloudType,Foam::crossSectionType::ElectronExciationCS>::crossSection(scalar eVEnergy) const
 {
+    //Cut of where the model is not valid
     if(eVEnergy < minEex_[s_])
         return 0.0;
 
@@ -158,6 +162,7 @@ Foam::scalar Foam::BrusaCrossSection<CloudType,Foam::crossSectionType::ElectronE
 
     scalar EkeV = eVEnergy / 1000.0;
 
+    //Calculate the cross section according to Brusa
     scalar Qex = 1.0/(F_[s_]*(G_[s_]+EkeV))*::log(eVEnergy/Eex_[s_]);
     Qex*=1.e-20;
     return Qex;
@@ -197,6 +202,7 @@ Foam::BrusaCrossSection<CloudType,Foam::crossSectionType::ElectronIonizationCS>:
 template<class CloudType>
 Foam::scalar Foam::BrusaCrossSection<CloudType,Foam::crossSectionType::ElectronIonizationCS>::crossSection(scalar eVEnergy) const
 {
+    //Cut of where the model is not valid
     if(eVEnergy < minEion_[s_])
         return 0.0;
 
@@ -206,7 +212,7 @@ Foam::scalar Foam::BrusaCrossSection<CloudType,Foam::crossSectionType::ElectronI
 
     scalar y = eVEnergy/Eion_[s_];
 
-    eVEnergy/=1000.0;//keV
+    eVEnergy/=1000.0;//in keV
     scalar x = eVEnergy/P_[s_];
 
     if(x < 1.0)
@@ -214,6 +220,7 @@ Foam::scalar Foam::BrusaCrossSection<CloudType,Foam::crossSectionType::ElectronI
     if(y < 1)
         y = 1.0;
 
+    //Calculate the cross section according to Brusa
     scalar xySqrt = ::sqrt((y-1.0)/(x+1.0));
     scalar Qion = (L_[s_]/(M_[s_]+x)+N_[s_]/x)*xySqrt*xySqrt*xySqrt*(1.0+(2.0/3.0)*(1.0-1.0/(2.0*x))*::log(2.7+::sqrt(x-1.0)));
     Qion*=1.e-20;

@@ -27,6 +27,7 @@ License
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+//Construct the model and return the smart pointer
 template<class CloudType>
 Foam::autoPtr<Foam::TotalCrossSectionModel<CloudType>>
 Foam::TotalCrossSectionModel<CloudType>::New
@@ -35,13 +36,14 @@ Foam::TotalCrossSectionModel<CloudType>::New
     CloudType& owner
 )
 {
-    const word modelType(dict.lookup("TotalCrossSectionModel"));
+    const word modelType(dict.lookup("TotalCrossSectionModel"));//Lookup the selection
 
     Info<< "|->    Selecting TotalCrossSectionModel " << modelType << endl;
 
     typename dictionaryConstructorTable::iterator cstrIter =
         dictionaryConstructorTablePtr_->find(modelType);
 
+    //Unknown model, print all known
     if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
         FatalErrorInFunction

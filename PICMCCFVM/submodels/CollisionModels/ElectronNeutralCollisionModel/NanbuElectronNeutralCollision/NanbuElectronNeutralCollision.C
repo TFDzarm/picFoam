@@ -70,7 +70,7 @@ void Foam::NanbuElectronNeutralCollision<CloudType>::updateVelocity(scalar eV, t
     if(eV < 1e-30)
         cosChi = 1.0;
     else
-        cosChi = 1.0/eV*(eV+2.-2.*::pow(1.+eV,rndGen.scalar01()));
+        cosChi = 1.0/eV*(eV+2.-2.*::pow(1.+eV,rndGen.scalar01()));//Scattering angle
 
     scalar sinChi;
     if(cosChi*cosChi > 1.0)
@@ -81,16 +81,19 @@ void Foam::NanbuElectronNeutralCollision<CloudType>::updateVelocity(scalar eV, t
     else
         sinChi = sqrt( 1.0 - cosChi*cosChi );
 
+    //Relative velocity
     vector g = pE.U() - pN.U();
     scalar g_mag = mag(g);
     scalar g_perp = ::sqrt(::pow(g.y(),2)+::pow(g.z(),2));
 
+    //Update the velocity according to Nanbu
     vector h = vector(g_perp*::cos(phi) , -1.0*(g.y()*g.x()*::cos(phi)+g_mag*g.z()*::sin(phi))/g_perp , -1.0*(g.z()*g.x()*::cos(phi)-g_mag*g.y()*::sin(phi))/g_perp);
 
     pE.U() = pE.U() - massN/(massN+massE)*(g*(1.0-cosChi)+h*sinChi);
     pN.U() = pN.U() + massE/(massN+massE)*(g*(1.0-cosChi)+h*sinChi);
 }
 
+//Same as above, but uses sampled velocity Un to calculate the scattering
 template<class CloudType>
 void Foam::NanbuElectronNeutralCollision<CloudType>::updateVelocity(scalar eV, typename CloudType::parcelType& pE, vector& Un, label idN)
 {

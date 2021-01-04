@@ -90,9 +90,10 @@ Foam::ParticleMerging<CloudType>::coeffDict() const
 template<class CloudType>
 void Foam::ParticleMerging<CloudType>::checkAndMerge()
 {
+    //Is the model active and are the conditions for a merge met?
     if(active() && shouldMerge()) {
         Info << "[ParticleMerging]" << endl;
-        mergeParticles();
+        mergeParticles();//Merge particles
     }
 }
 

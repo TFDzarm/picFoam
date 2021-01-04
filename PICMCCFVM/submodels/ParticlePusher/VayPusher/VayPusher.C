@@ -67,14 +67,17 @@ void Foam::VayPusher<CloudType>::updateVelocity(typename CloudType::parcelType& 
     scalar mass = cloud.constProps(p.typeId()).mass();
     scalar charge = p.charge();
 
+    //Lorentz factor
     scalar lF = 1.0/Foam::sqrt(1.0-Foam::sqr(Foam::mag(p.U())/constant::universal::c.value()));
-	//update rU
+	
+    //update rU (the relativistic velocity)
     vector rU = U*lF;
 
     vector Ud = rU + charge*trackTime/mass*E;//E[celli]
 
 	vector T = charge*dt2/mass*B[celli];
 
+    //rotation
     Ud += (U^T);
 
 	scalar alpha = 1.0+Foam::sqr(Foam::mag(Ud)/constant::universal::c.value());
@@ -114,14 +117,17 @@ vector Foam::VayPusher<CloudType>::correctedVelocity(const typename CloudType::p
     scalar mass = cloud.constProps(p.typeId()).mass();
     scalar charge = p.charge();
 
+    //Lorentz factor
     scalar lF = 1.0/Foam::sqrt(1.0-Foam::sqr(Foam::mag(p.U())/constant::universal::c.value()));
-    //update rU
+
+    //update rU (the relativistic velocity)
     vector rU = U*lF;
 
     vector Ud = rU + charge*trackTime/mass*E;
 
     vector T = charge*dt2/mass*B[celli];
 
+    //rotation
     Ud += (U^T);
 
     scalar alpha = 1.0+Foam::sqr(Foam::mag(Ud)/constant::universal::c.value());

@@ -11,49 +11,52 @@ FoamFile
     format      ascii;
     class       dictionary;
     location    "constant";
-    object      dsmcProperties;
+    object      picProperties;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-
+//Note: One can type in an invalid model name to get a list of all defined models at runtime!
 
 SolverSettings
 {
-    typeIdList          (e);
+    typeIdList          (e);//Defined species
     fieldCalculation    ();
 
-    ChargeDistribution  CellAverage;
-    FieldWeigthing      CellAverage;
-    spaceCharge     0;
+    ChargeDistribution  CellAverage;//Model for weighting the charge to the mesh
+    FieldWeigthing      CellAverage;//Model for weighting the electric field to the parcel
+    spaceCharge     0;//[As] space charge to be uniformly distributed
 
 
-    checkDebyeLength        false;
-    checkPlasmaFrequency    false;
-    warnCellTrajectory      0.3;  
+    checkDebyeLength        false;//Print a message if the cell is larger than the Debye length
+    checkPlasmaFrequency    false;//Print a message if the time step is larger than the plasma frequency
+    warnCellTrajectory      0.3;//Warn once every time step if a particle moves further than x of the cell length (there may even be faster particles)
 }
 
 Diagnostics
 {
-    modelList (ParcelInfo);
+    modelList (ParcelInfo);//Select these Diagnostic models
 
     ParcelInfoCoeffs
     {
         position yes;
+        //Can be specified for every model (optional):
+        //diagnosticControl timeStep;//[timeStep|writeTime|runTime|...]
+        //diagnosticInterval 100;//Only run every 100th timestep
     }
 }
 
-moleculeProperties
+moleculeProperties//Properties of all species defined via SolverSettings/typeIdList
 {
     e
     {
-        nEquivalentParticles            1;
+        nEquivalentParticles            1;//Number of real particles included in the parcel
         mass                            9.109e-31;
         diameter                        5.6358e-15;
-        omega                           1;
+        omega                           1;//viscosity index (used only by the VariableHardSphere model)
         charge                          -1.602176e-19;
-        solveMovement                   true;
+        solveMovement                   true;//Whether the parcel should move or stay stationary
     }
-    SpeciesRelations
+    SpeciesRelations//Relations between species. Required for the collision algorithms among others
     {
         electronTypeId e;
     }
@@ -64,20 +67,23 @@ moleculeProperties
 // ~~~~~~~~~~~~~~~
 BoundaryModels
 {
+    //Reflection model for boundaries of type wall (see: constant/polyMesh/boundary)
     WallReflectionModel SpecularReflection;
 
+    //List of PatchEvent models
     PatchEventModels
     {
         modelList ( );
     }
 
+    //Boundary models have to be defined for patches
     PatchBoundaryModels
     {
         modelList
         (
-            "(lowerBoundary|upperBoundary|rightBoundary|leftBoundary)"
+            "(lowerBoundary|upperBoundary|rightBoundary|leftBoundary)"//Definition for multiple boundaries
             {
-                type           none;
+                type           none;//none: Open boundary delete everything
             }
         );
 

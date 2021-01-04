@@ -57,7 +57,7 @@ Foam::SputterEvent<CloudType>::SputterEvent
     label nSpecies = this->owner().typeIdList().size();
 
     //Get number of patches not counting processorPatches
-    label nPatches = cloud.mesh().boundaryMesh().size();//Used in multiple classes maybe calculate it in cloud
+    label nPatches = cloud.mesh().boundaryMesh().size();//FIXME: Used in multiple classes maybe calculate it globally once...
     if(Pstream::parRun())
     {
         forAll(cloud.mesh().boundaryMesh(), patchId)
@@ -74,6 +74,7 @@ Foam::SputterEvent<CloudType>::SputterEvent
     sputterProbability_.setSize(nPatches,List<List<scalar>>(nSpecies,List<scalar>(nSpecies,0.0)));
     initalEnergies_.setSize(nPatches,List<List<scalar>>(nSpecies));
 
+    //Read options for all patches...
     forAll(associatedPatches,i)
     {
         label patchId = associatedPatches[i];
@@ -86,12 +87,13 @@ Foam::SputterEvent<CloudType>::SputterEvent
             {
                 const dictionary& subDict = iter().dict();
 
-                label id = findIndex(this->owner().typeIdList(),iter().keyword());
-                wordList typeIdWords = subDict.lookup("sputterTypeIds");
-                scalarList typeIdEnergies = subDict.lookup("initialEnergies");
+                label id = findIndex(this->owner().typeIdList(),iter().keyword());//Species for which we sputter
+                wordList typeIdWords = subDict.lookup("sputterTypeIds");//Species which will be sputtered/injected
+                scalarList typeIdEnergies = subDict.lookup("initialEnergies");//Energie of the injected species
                 initalEnergies_[patchId][id].transfer(typeIdEnergies);
-                scalarList probability = subDict.lookup("probabilities");
+                scalarList probability = subDict.lookup("probabilities");//Probabilities for the event to occur
 
+                //Lists all need to be the same size
                 if(typeIdWords.size() != initalEnergies_[patchId][id].size() && probability.size() != typeIdWords.size())
                     FatalErrorInFunction << "Number of species to be sputtered (" <<  typeIdWords.size() << ") does not equal number of inital energies (" << initalEnergies_[patchId][id].size() << ") or probabilities (" << probability.size() << ") definied" << abort(FatalError);
 
@@ -113,7 +115,8 @@ Foam::SputterEvent<CloudType>::SputterEvent
         }
     }
 
-
+    //Setup list for the injection code
+    //Get the triangles that make up a faces, used for calculating an in-plane vectors, that in turn are used to rotate the velocity vector
     patchNormal_.setSize(nPatches);
     patchTriFaces_.setSize(nPatches);
     sputterdParcels_.setSize(nPatches,Field<scalar>(nSpecies,0.0));
@@ -190,6 +193,7 @@ void Foam::SputterEvent<CloudType>::info()
     scalar dt = mesh.time().deltaTValue();
     scalar beta = dt/(mesh.time().value()-averageStart_);
 
+    //Calculate running averages and print info and the rate if particles that are injected
     forAll(this->associatedPatches(),i)
     {
         label patchId = this->associatedPatches()[i];
@@ -229,12 +233,12 @@ void Foam::SputterEvent<CloudType>::collisionEvent(typename CloudType::parcelTyp
     label patchId = p.patch();
     label typeId = p.typeId();
 
-    if(sputterSpecies_[patchId][typeId].size() > 0)
+    if(sputterSpecies_[patchId][typeId].size() > 0)//Do we inject a species after collision with a parcel with "typeId"
     {
-        forAll(sputterProbability_[patchId][typeId],i)
+        forAll(sputterProbability_[patchId][typeId],i)//Go through all propbilities 
         {
                 scalar prop = sputterProbability_[patchId][typeId][i];
-                if(rndGen.scalar01() < prop)
+                if(rndGen.scalar01() < prop)//Inject?
                 {
                     label celli = p.cell();
                     const polyPatch& patch = mesh.boundaryMesh()[patchId];
@@ -265,12 +269,12 @@ void Foam::SputterEvent<CloudType>::collisionEvent(typename CloudType::parcelTyp
                     t2 /= mag(t2);
 
 
-                    label injectedType = sputterSpecies_[patchId][typeId][i];
+                    label injectedType = sputterSpecies_[patchId][typeId][i];//TypeId of the parcel to be injected
 
                     scalar temperature;
-                    if(initalEnergies_[patchId][typeId][i] < 0.0)
+                    if(initalEnergies_[patchId][typeId][i] < 0.0)//If energy is negative use the energy of the parcel that hit the patch
                     {
-                        //this one includes the dirft velocity, thats an error...
+                        //this one includes the dirft velocity, thats an error FIXME...
                         temperature = (p.U()&p.U())*cloud.constProps(typeId).mass()/(3*constant::physicoChemical::k.value());
                     }
                     else
@@ -278,6 +282,7 @@ void Foam::SputterEvent<CloudType>::collisionEvent(typename CloudType::parcelTyp
 
                     scalar mass = cloud.constProps(injectedType).mass();
 
+                    //3D velocity away from the patch into the domain (uses Maxwell-Boltzmann distribution)
                     scalar R = cloud.rndGen().scalar01();
                     vector U = sqrt(constant::physicoChemical::k.value()*temperature/mass)
                             *(
@@ -286,6 +291,7 @@ void Foam::SputterEvent<CloudType>::collisionEvent(typename CloudType::parcelTyp
                              )
                             + sqrt(constant::physicoChemical::k.value()*temperature/mass)*sqrt(-2.0*log((1.0-R)))*n;
 
+                    //Add the particle
                     typename CloudType::parcelType* newP = cloud.addNewParcel
                     (
                          position,
@@ -293,6 +299,7 @@ void Foam::SputterEvent<CloudType>::collisionEvent(typename CloudType::parcelTyp
                          U,
                          injectedType
                     );
+                    //Set back the velocity by half a time step using the current time fraction of the particle that hit the patch and setup the weight
                     newP->syncVelocityAtBoundary(cloud, p.stepFraction()-0.5);
                     newP->nParticle() = p.nParticle();
 
@@ -301,7 +308,7 @@ void Foam::SputterEvent<CloudType>::collisionEvent(typename CloudType::parcelTyp
                     cloud.boundaryModels().onEjection(*newP,patchId);
                     cloud.boundaryEventModels().onEjection(*newP,patchId);
 
-                    //Move only fraction of this timestep
+                    //Move the new particle only the fraction of this timestep
                     newP->stepFraction() = p.stepFraction();
             }
         }

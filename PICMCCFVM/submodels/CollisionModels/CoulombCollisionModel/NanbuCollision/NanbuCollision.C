@@ -73,6 +73,7 @@ void Foam::NanbuCollision<CloudType>::collide
     namespace ce = constant::electromagnetic;
     namespace cu = constant::universal;
 
+    //Get particle properties
     vector& UP = parcelP->U();
     vector& UQ = parcelQ->U();
 
@@ -92,16 +93,19 @@ void Foam::NanbuCollision<CloudType>::collide
     vector g = UP-UQ;
     scalar g_mag = mag(g);
 
+    //Impact parameter
     scalar b0 = chargeP*chargeQ/(2.0*cm::pi*ce::epsilon0.value()*reMass*g_mag*g_mag);//FIXME: Needs to use <g^2> instead if g^2...
     scalar b_min = max(cu::h.value()/(2.0*(g_mag*reMass)),b0);// Perez et al.: de-Broglie wavelength (unsure if g and reMass should be used), b0 (Nanbu97)
 
 
+    //Get the coulomb log
     scalar coulombLog;
     if(this->coulombLog_[typeIdP][typeIdQ] == 0.0)
         coulombLog = max(2.0,0.5*::log(1.0+::pow(debyeLength,2)/::pow(b_min,2)));//FIXME: performance
     else
         coulombLog = this->coulombLog_[typeIdP][typeIdQ];
 
+    //Calculate the scattering angles
     scalar s = coulombLog/(4.0*cm::pi) * ::pow(chargeP*chargeQ/(ce::epsilon0.value()*reMass),2)*(nQ*nP/nPQ)*::pow(g_mag,-3.0)*deltaT;
     scalar cosChi = calculate_cosChi(s);
     scalar sinChi = sqrt( 1.0 - cosChi*cosChi );
@@ -116,9 +120,10 @@ void Foam::NanbuCollision<CloudType>::collide
     vector preUP = UP;
     vector preUQ = UQ;
 
+    //Update the velocities
     UP = UP - massQ/(massP+massQ)*(g*(1.0-cosChi)+h*sinChi);
     UQ = UQ + massP/(massP+massQ)*(g*(1.0-cosChi)+h*sinChi);
-    this->weightCorrection().correctVelocity(parcelP,parcelQ,preUP,preUQ);
+    this->weightCorrection().correctVelocity(parcelP,parcelQ,preUP,preUQ);//Call weight correction
 }
 
 template<class CloudType>

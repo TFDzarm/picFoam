@@ -62,7 +62,7 @@ void Foam::NoBinaryCollision<CloudType>::updateVelocity
     typename CloudType::parcelType& pP,
     typename CloudType::parcelType& pQ
 )
-{}
+{}//do nothing
 
 template<class CloudType>
 void Foam::NoBinaryCollision<CloudType>::updateVelocity
@@ -71,7 +71,7 @@ void Foam::NoBinaryCollision<CloudType>::updateVelocity
     vector& Uq,
     label idQ
 )
-{}
+{}//do nothing
 
 
 // ************************************************************************* //

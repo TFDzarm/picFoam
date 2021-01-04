@@ -83,7 +83,7 @@ public:
 
     // Member Functions
 
-        //- Stop run if collision occurs
+        //- Stop the simulation if a collision occurs
         virtual void collisionEvent(typename CloudType::parcelType& p, typename CloudType::parcelType::trackingData& td)
         {
             CloudType& cloud(this->owner());

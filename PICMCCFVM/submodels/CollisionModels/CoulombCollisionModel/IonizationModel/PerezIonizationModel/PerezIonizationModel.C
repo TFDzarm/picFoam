@@ -50,12 +50,14 @@ Foam::PerezIonizationModel<CloudType>::PerezIonizationModel
         cloud.particleProperties().subDict("moleculeProperties").subDict("SpeciesRelations")
     );
 
+    //We need to know which typeId is the electron species
     word electronSpecies = relations.lookup("electronTypeId");
     electronTypeId_ = findIndex(this->owner().typeIdList(),electronSpecies);
     if(electronTypeId_ == -1)
         FatalErrorInFunction << "electronSpecies " << electronSpecies << " is not defined" << abort(FatalError);
 
-    forAllConstIter(IDLList<entry>, this->coeffDict(), iter)
+    //Read ionization data
+    forAllConstIter(IDLList<entry>, this->coeffDict(), iter)//for every subdict...
     {
         if(iter().isDict())
         {
@@ -66,14 +68,14 @@ Foam::PerezIonizationModel<CloudType>::PerezIonizationModel
                 FatalErrorInFunction << "ionSpecies " << ionSpecies << " is not defined" << abort(FatalError);
 
             label atomicNumber = readLabel(subDict.lookup("atomicNumber"));
-            label ionizationLimit = subDict.lookupOrDefault<label>("ionizationLimit",atomicNumber);
+            label ionizationLimit = subDict.lookupOrDefault<label>("ionizationLimit",atomicNumber);//Limit for the ionization, default is the atomic number
             if(ionizationLimit > atomicNumber)
                 ionizationLimit = atomicNumber;
 
             if(ionizationLimit <= 1)
             {
                 Info << "|->    IonizationModel: " << iter().keyword() << ".ionizationLimit is " << ionizationLimit << ", no ionization for ion species " << ionSpecies << endl;
-                if(ionizationLimit < 1)
+                if(ionizationLimit < 1)//Go to the next subdict...
                     continue;
             }
 
@@ -90,7 +92,7 @@ Foam::PerezIonizationModel<CloudType>::PerezIonizationModel
             ionizationData_[idIon].ionizationTransferredEnergy_.resize(atomicNumber);
             ionizationData_[idIon].ionizationLostEnergy_.resize(atomicNumber);
 
-            ionizationData_[idIon].calculateIonizationCrossSection();
+            ionizationData_[idIon].calculateIonizationCrossSection();//Create the cross section table for this ion species
 
             word neutralSpecies = subDict.lookupOrDefault<word>("neutralSpecies","");
             label idNeutal = findIndex(this->owner().typeIdList(),neutralSpecies);
@@ -122,6 +124,7 @@ Foam::PerezIonizationModel<CloudType>::~PerezIonizationModel()
 template<class CloudType>
 void Foam::PerezIonizationModel<CloudType>::initIonization(label pTypeId, label qTypeId, scalar nP, scalar nQ)
 {
+    //Set up in a way that np_ is always the value of ion species
     ne_ = 0.0;
     nei_ = 0.0;
     if(pTypeId == electronTypeId_)
@@ -133,7 +136,7 @@ void Foam::PerezIonizationModel<CloudType>::initIonization(label pTypeId, label 
 template<class CloudType>
 void Foam::PerezIonizationModel<CloudType>::prepareNumberDensities(typename CloudType::parcelType& pP, typename CloudType::parcelType& pQ)
 {
-    //Paper: Only count pairs that can collide .... we do not need to count only the pairs that can collide.
+    //Paper: Only count pairs that can collide. Here: We do not need to count only the pairs that can collide.
     // ne and nei do not include newly created electrons in our case!
     label pType = pP.typeId();
     label qType = pQ.typeId();
@@ -151,7 +154,7 @@ void Foam::PerezIonizationModel<CloudType>::prepareNumberDensities(typename Clou
 
         scalar mass = this->owner().constProps(pType).mass();
         scalar gamma = 1.0/sqrt(1.0-sqr(mag(pP.U())/constant::universal::c.value()));
-        E = (gamma-1.0)*mass*constant::universal::c.value()*constant::universal::c.value()/constant::electromagnetic::e.value();
+        E = (gamma-1.0)*mass*constant::universal::c.value()*constant::universal::c.value()/constant::electromagnetic::e.value();//Energy of the electron
 
     }
     else if(qType == electronTypeId_) {
@@ -163,7 +166,7 @@ void Foam::PerezIonizationModel<CloudType>::prepareNumberDensities(typename Clou
 
         scalar mass = this->owner().constProps(qType).mass();
         scalar gamma = 1.0/sqrt(1.0-sqr(mag(pQ.U())/constant::universal::c.value()));
-        E = (gamma-1.0)*mass*constant::universal::c.value()*constant::universal::c.value()/constant::electromagnetic::e.value();
+        E = (gamma-1.0)*mass*constant::universal::c.value()*constant::universal::c.value()/constant::electromagnetic::e.value();//Energy of the electron
     }
     else {
         return;
@@ -172,6 +175,7 @@ void Foam::PerezIonizationModel<CloudType>::prepareNumberDensities(typename Clou
     if( Zstar >= ionizationData_[parcelTypeId].ionizationLimit_)
         return;
 
+    //Find the entry in the interpolation table
     scalar x = 6.142165*::log( E );
 
     if ( x < 0.0)
@@ -179,7 +183,7 @@ void Foam::PerezIonizationModel<CloudType>::prepareNumberDensities(typename Clou
     else if ( x > 99.0 )
         x = 99.0;
 
-    scalar cs = ionizationData_[parcelTypeId].ionizationCrossSection_[Zstar][label(x)];
+    scalar cs = ionizationData_[parcelTypeId].ionizationCrossSection_[Zstar][label(x)];//Get the cross section
 
     if( cs>0.0 ) {
         ne_ += We;
@@ -190,6 +194,7 @@ void Foam::PerezIonizationModel<CloudType>::prepareNumberDensities(typename Clou
 template<class CloudType>
 void Foam::PerezIonizationModel<CloudType>::prepareIonization(typename CloudType::parcelType& pP, typename CloudType::parcelType& pQ)
 {
+    //Set up internal pointers
     label pType = pP.typeId();
     label qType = pQ.typeId();
     if(pType == electronTypeId_ && ionizationData_[qType].isActive()) {
@@ -207,6 +212,7 @@ void Foam::PerezIonizationModel<CloudType>::prepareIonization(typename CloudType
 
     label parcelTypeId = parcel_->typeId();
 
+    //Check if the ionization is allowed
     if(parcel_->Zstar() >= ionizationData_[parcelTypeId].ionizationLimit_) {
         performIonization_ = false;
         return;
@@ -217,9 +223,10 @@ void Foam::PerezIonizationModel<CloudType>::prepareIonization(typename CloudType
 template<class CloudType>
 bool Foam::PerezIonizationModel<CloudType>::ionize()
 {
-    if(!performIonization_)
+    if(!performIonization_)//Can we try the ionize?
         return false;
 
+    //Calculate particle properties
     label parcelTypeId = parcel_->typeId();
     label atomicNumber = ionizationData_[parcelTypeId].atomicNumber_;
     label Zstar = parcel_->Zstar();
@@ -257,6 +264,7 @@ bool Foam::PerezIonizationModel<CloudType>::ionize()
     scalar com_ionProp = 0.0;
     label l;
 
+    //Get the cross section, energy transferred to the new electron and energy lost by the colliding electron
     for(int k = 0; k <= ionizationMax; k++)
     {
         s = 6.142165*::log(eVkinEnergy_s);
@@ -424,6 +432,7 @@ scalar PerezIonizationModel<CloudType>::IonizationData::bindingEnergy(label Zsta
 template<class CloudType>
 void PerezIonizationModel<CloudType>::IonizationData::calculateIonizationCrossSection()
 {
+    //Create the cross section table for interpolations
     namespace ca = constant::atomic;
     namespace cu = constant::universal;
     namespace cm = constant::mathematical;

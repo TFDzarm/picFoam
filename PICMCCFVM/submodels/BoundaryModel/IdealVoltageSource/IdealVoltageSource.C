@@ -85,6 +85,7 @@ Foam::IdealVoltageSource<CloudType>::IdealVoltageSource
             {
                 interactionList_[patchId] = etAnode;
 
+                //Has to be of type fixedValue
                 if(!isA<fixedValueFvPatchField<scalar>>(phiE.boundaryField()[patchId]))
                     FatalErrorInFunction << "Expected fixedValue boundary condition for field " << phiE.name() << " on patch " << patch.name() << nl << abort(FatalError);
             }
@@ -93,6 +94,7 @@ Foam::IdealVoltageSource<CloudType>::IdealVoltageSource
                 emissionList_.initilizeAll(patchId,ParticleEmitter<CloudType>::vmMaxwellianFlux);
                 interactionList_[patchId] = etCathode;
 
+                //Has to be of type fixedValue
                 if(!isA<fixedValueFvPatchField<scalar>>(phiE.boundaryField()[patchId]))
                     FatalErrorInFunction << "Expected fixedValue boundary condition for field " << phiE.name() << " on patch " << patch.name() << nl << abort(FatalError);
             }
@@ -128,6 +130,7 @@ void Foam::IdealVoltageSource<CloudType>::postUpdate_Boundary()
 
     reduce(chargeAccumulator_, sumOp<scalar>());
 
+    //Charge that was accumulated previous timesteps
     Qconv2_ = Qconv1_;
     Qconv1_ = Qconv_;
     Qconv_ -= (chargeAccumulator_);//account for E?
@@ -138,13 +141,17 @@ void Foam::IdealVoltageSource<CloudType>::postUpdate_Boundary()
     if(Qconv_== 0.0)
         return;
 
-
+    //Calculate the current flowing through the circuit
     Info << "[" << typeName << "] current: " << (2.0*(Qconv_-Qconv1_) + 0.5*(Qconv2_-Qconv_))/dt << " A" << endl;
 }
 
+/*
+Foam::IdealVoltageSource<CloudType>::injection called in evolve function
+*/
 template<class CloudType>
 void Foam::IdealVoltageSource<CloudType>::injection()
 {
+    //Tell EmissionModels to inject particles
     emissionList_.emission();
 }
 
@@ -152,6 +159,7 @@ void Foam::IdealVoltageSource<CloudType>::injection()
 template<class CloudType>
 void Foam::IdealVoltageSource<CloudType>::particleEjection(typename CloudType::parcelType& p, label patchId)
 {
+    //Have we ejected a charged particle? Subtract the charge...
     if(interactionList_[patchId] == etAnode)
     {
         chargeAccumulator_ -= p.charge()*p.nParticle();
@@ -166,6 +174,7 @@ bool Foam::IdealVoltageSource<CloudType>::particleBC(typename CloudType::parcelT
     label patchId = p.patch();
     const scalar charge = p.nParticle()*p.charge();
 
+    //Did a charged particle hit the boundary? Add the charge... Else reflect...
     if(charge != 0.0)
     {
         if(interactionList_[patchId] == etAnode)
@@ -177,6 +186,7 @@ bool Foam::IdealVoltageSource<CloudType>::particleBC(typename CloudType::parcelT
         p.wallReflection(cloud, td);
     }
 
+    //Check EmissionModels
     if(interactionList_[patchId] == etCathode)
         emissionList_.collisionalEmission(p,td);
 

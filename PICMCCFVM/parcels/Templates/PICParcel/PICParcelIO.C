@@ -78,7 +78,7 @@ Foam::PICParcel<ParcelType>::PICParcel
     );
 }
 
-
+//Read fields on simulation start
 template<class ParcelType>
 void Foam::PICParcel<ParcelType>::readFields(Cloud<PICParcel<ParcelType>>& c)
 {
@@ -117,7 +117,7 @@ void Foam::PICParcel<ParcelType>::readFields(Cloud<PICParcel<ParcelType>>& c)
     }
 }
 
-
+//Called on writeTime
 template<class ParcelType>
 void Foam::PICParcel<ParcelType>::writeFields
 (
@@ -150,7 +150,7 @@ void Foam::PICParcel<ParcelType>::writeFields
     }
 
     bool writeFields = np > 0;
-    if(picCloud.isInitializing() && !writeFields)//allways write even empty fields!
+    if(picCloud.isInitializing() && !writeFields)//We cannot overwrite existing fields with empty ones
     {
         Info << "WARNING no particles initialized make sure to remove old lagrangian fields" << endl;
     }
@@ -164,6 +164,7 @@ void Foam::PICParcel<ParcelType>::writeFields
 
 // * * * * * * * * * * * * * * * IOstream Operators  * * * * * * * * * * * * //
 
+//This is used in parallel COM
 template<class ParcelType>
 Foam::Ostream& Foam::operator<<
 (

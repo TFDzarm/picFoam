@@ -25,6 +25,7 @@ Class
     Foam::noBackground
 
 Description
+    No background, do nothing!
 
 SourceFiles
     noBackground.C

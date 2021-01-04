@@ -15,43 +15,49 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+//Note: One can type in an invalid model name to get a list of all defined models at runtime!
+
 SolverSettings
 {
-    typeIdList                      (e Ar+);
-    fieldCalculation (e Ar+);
-    ChargeDistribution              CellAverage;
-    FieldWeigthing                  CellAverage;
+    typeIdList                      (e Ar+);//Defined species
+    fieldCalculation                (e Ar+);//Calculate separate fields for these species
+    ChargeDistribution              CellAverage;//Model for weighting the charge to the mesh
+    FieldWeigthing                  CellAverage;//Model for weighting the electric field to the parcel
 
-    spaceCharge                     0;
+    spaceCharge                     0;//[As] space charge to be uniformly distributed
 
-    checkDebyeLength                false;
-    checkPlasmaFrequency            false;
+    checkDebyeLength                false;//Print a message if the cell is larger than the Debye length
+    checkPlasmaFrequency            false;//Print a message if the time step is larger than the plasma frequency
 
-    warnCellTrajectory              0.5;
+    warnCellTrajectory              0.5;//Warn once every time step if a particle moves further than x of the cell length (there may even be faster particles)
 
+    //syncVelocityAtBoundary        true;//Sync the particles velocity at the boundary (in the leap frog scheme velocity and position are offset by half a timestep) (optional)
 }
 
 
 Diagnostics
 {
-    modelList (Composition Temperature);
+    modelList (Composition Temperature);//Select these Diagnostic models
 
-    CompositionCoeffs
+    CompositionCoeffs//Additional options
     {
         printNumberDensity true;
+        //Can be specified for every model (optional):
+        //diagnosticControl timeStep;//[timeStep|writeTime|runTime|...]
+        //diagnosticInterval 100;//Only run every 100th timestep
     }
 }
 
-moleculeProperties
+moleculeProperties//Properties of all species defined via SolverSettings/typeIdList
 {
     e
     {
         mass                            9.109e-31;
         diameter                        5.6358e-15;
-        omega                           1;
+        omega                           1;//viscosity index (used only by the VariableHardSphere model)
         charge                          -1.602176e-19;
-        solveMovement                   true;
-        nEquivalentParticles            1;
+        solveMovement                   true;//Whether the parcel should move or stay stationary
+        nEquivalentParticles            1;//Number of real particles included in the parcel
     }
     Ar+
     {
@@ -63,7 +69,7 @@ moleculeProperties
         nEquivalentParticles            1;
     }
 
-    SpeciesRelations
+    SpeciesRelations//Relations between species. Required for the collision algorithms among others
     {
         electronTypeId e;
         species1
@@ -79,22 +85,25 @@ moleculeProperties
 // ~~~~~~~~~~~~~~~
 BoundaryModels
 {
+    //Reflection model for boundaries of type wall (see: constant/polyMesh/boundary)
     WallReflectionModel SpecularReflection;
 
+    //List of PatchEvent models
     PatchEventModels
     {
         modelList ();
     }
 
+    //Boundary models have to be defined for patches
     PatchBoundaryModels
     {
         modelList
         (
-            source
+            source//Patch name
             {
                 type           SimpleInjection;
 
-                SimpleInjectionCoeffs
+                SimpleInjectionCoeffs//Options
                 {
                     frequencies         (5.3e12 5.3e12);
                     injectionEndTime    1;
@@ -118,7 +127,7 @@ BoundaryModels
                             
                 }
             }
-            collector
+            collector//Patch name
             {
                 type           FloatingPotential;
             }

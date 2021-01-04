@@ -148,15 +148,16 @@ void Foam::BoundaryModelList<CloudType>::setupModels(const dictionary& dict, Clo
         }
     }
 
-    this->setSize(modelData.size());
+    this->setSize(modelData.size());//Set the size of the pointer list
     forAll(modelData,i)
     {
         word modelType = modelData[i].modelName();
 
-        DynamicList<label> associatedPatches;
+        DynamicList<label> associatedPatches;//List of patches this model is defined on, will be saved by the model
 
         associatedPatches.append(modelData[i].patchIds());
 
+        //Construct the model
         this->set(i,
                   BoundaryModel<CloudType>::New(
                       modelType,
@@ -191,7 +192,7 @@ Foam::BoundaryModelList<CloudType>::~BoundaryModelList()
 template<class CloudType>
 void Foam::BoundaryModelList<CloudType>::injection()
 {
-    forAll(*this, i)
+    forAll(*this, i)//For all models call the injection function
     {
         this->operator[](i).injection();
     }
@@ -200,7 +201,7 @@ void Foam::BoundaryModelList<CloudType>::injection()
 template<class CloudType>
 void Foam::BoundaryModelList<CloudType>::preUpdate_Boundary()
 {
-    forAll(*this, i)
+    forAll(*this, i)//For all models...
     {
         this->operator[](i).preUpdate_Boundary();
     }
@@ -209,7 +210,7 @@ void Foam::BoundaryModelList<CloudType>::preUpdate_Boundary()
 template<class CloudType>
 void Foam::BoundaryModelList<CloudType>::postUpdate_Boundary()
 {
-    forAll(*this, i)
+    forAll(*this, i)//For all models...
     {
         this->operator[](i).postUpdate_Boundary();
     }
@@ -220,12 +221,12 @@ bool Foam::BoundaryModelList<CloudType>::particleBC(typename CloudType::parcelTy
 {
     forAll(*this, i)
     {
-        if(this->operator[](i).interactWithPatch(p.patch()))
+        if(this->operator[](i).interactWithPatch(p.patch()))//Check associatedPatches in the model
         {
             return this->operator[](i).particleBC(p,td);//Only one patch will be valid
         }
     }
-    return false;//default
+    return false;//default did not hit
 }
 
 template<class CloudType>
@@ -233,7 +234,7 @@ void Foam::BoundaryModelList<CloudType>::onEjection(typename CloudType::parcelTy
 {
     forAll(*this, i)
     {
-        if(this->operator[](i).interactWithPatch(patchId))
+        if(this->operator[](i).interactWithPatch(patchId))//Check associatedPatches in the model
         {
             this->operator[](i).particleEjection(p, patchId);
         }

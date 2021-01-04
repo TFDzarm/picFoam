@@ -27,6 +27,7 @@ License
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+//Construct the model and return a smart pointer
 template<class CloudType>
 Foam::autoPtr<Foam::WallReflectionModel<CloudType>>
 Foam::WallReflectionModel<CloudType>::New
@@ -35,13 +36,14 @@ Foam::WallReflectionModel<CloudType>::New
     CloudType& owner
 )
 {
-    const word modelType(dict.lookup("WallReflectionModel"));
+    const word modelType(dict.lookup("WallReflectionModel"));//Selected model name
 
     Info<< "+ Selecting WallReflectionModel " << modelType << endl;
 
     typename dictionaryConstructorTable::iterator cstrIter =
         dictionaryConstructorTablePtr_->find(modelType);
 
+    //Unknown model...
     if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
         FatalErrorInFunction

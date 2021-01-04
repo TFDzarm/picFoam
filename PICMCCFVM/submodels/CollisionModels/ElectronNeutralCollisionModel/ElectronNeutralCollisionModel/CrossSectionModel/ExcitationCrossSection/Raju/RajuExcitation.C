@@ -48,6 +48,7 @@ Foam::RajuExcitationCS<CloudType,Type>::RajuExcitationCS
     /// Total and Elastic CrossSection
     //////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    //Create interpolation table from datasets
     label tableSize = 100;
     scalar tableStepSize = (tableSize-1)/::log(1000/0.08);
 
@@ -69,8 +70,8 @@ Foam::RajuExcitationCS<CloudType,Type>::RajuExcitationCS
         scalar Qex = raju_Qex[index-1] + (E-raju_Energies[index-1])*(raju_Qex[index] - raju_Qex[index-1])/(raju_Energies[index]-raju_Energies[index-1]);
         excitationCS.append(Qex);
     }
+    //Save interpolation table
     excitationCS_.transfer(excitationCS);
-
 }
 
 
@@ -101,7 +102,7 @@ Foam::scalar Foam::RajuExcitationCS<CloudType,Type>::crossSection(scalar eVEnerg
     }
     if(Qex <= 0.0)
        return 0.0;
-    //Info << eVkinEnergy << " --> " << Qel << endl;
+
     Qex *= 1E-20;
     return Qex;
 }

@@ -42,6 +42,7 @@ Foam::BerkeleyArgonElasticCS<CloudType,Type>::BerkeleyArgonElasticCS
     elasticLowEnergyCS_(),
     elasticCS_()
 {
+    //Create interpolation table to speed up the calculation of the cross section
     label tableSizeLowEnergy = 101;
     label tableSize = 500;
 
@@ -77,13 +78,14 @@ template<class CloudType, Foam::crossSectionType Type>
 Foam::scalar Foam::BerkeleyArgonElasticCS<CloudType,Type>::crossSection(scalar eVEnergy) const
 {
     scalar Qel = 0.0;
+    //Interpolation for low energies
     if(eVEnergy < 1.0)
     {
         label i(100*eVEnergy);
         scalar alpha = 100*eVEnergy - i;
         Qel = elasticLowEnergyCS_[i] + alpha*(elasticLowEnergyCS_[i+1]-elasticLowEnergyCS_[i]);
     }
-    else
+    else//Interpolation for high energies
     {
         label i(eVEnergy);
         if(i < elasticCS_.size()-1)

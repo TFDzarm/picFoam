@@ -67,6 +67,8 @@ void Foam::IsotropicScattering<CloudType>::updateVelocity
 
     label typeIdP = pP.typeId();
     label typeIdQ = pQ.typeId();
+
+    //References to the particles velocities
     vector& UP = pP.U();
     vector& UQ = pQ.U();
 
@@ -95,6 +97,7 @@ void Foam::IsotropicScattering<CloudType>::updateVelocity
             sinTheta*sin(phi)
         );
 
+    //Update the velocities
     UP = Ucm + postCollisionRelU*mQ/(mP + mQ);
     UQ = Ucm - postCollisionRelU*mP/(mP + mQ);
 }
@@ -139,7 +142,7 @@ void Foam::IsotropicScattering<CloudType>::updateVelocity
 
 
     UP = Ucm + postCollisionRelU*mQ/(mP + mQ);
-    Uq = Ucm - postCollisionRelU*mP/(mP + mQ);
+    Uq = Ucm - postCollisionRelU*mP/(mP + mQ);//Update the background velocity as well
 }
 
 // ************************************************************************* //

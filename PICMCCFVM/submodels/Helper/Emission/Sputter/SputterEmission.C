@@ -46,27 +46,29 @@ Foam::SputterEmission<CloudType>::SputterEmission
     energies_.setSize(nSpecies);
     probability_.setSize(nSpecies,scalarList(nSpecies,0.0));
 
+    //Read probabilities
     forAllConstIter(IDLList<entry>, this->coeffDict(), iter)
     {
-        if(iter().isDict())
+        if(iter().isDict())//Read all subdicts
         {
             const dictionary& subDict = iter().dict();
 
-            label id = findIndex(cloud.typeIdList(),iter().keyword());
+            label id = findIndex(cloud.typeIdList(),iter().keyword());//Is there a typeId for the dictionary name?
             if(id == -1)
                 FatalErrorInFunction << "Undefined typeId " << iter().keyword() << abort(FatalError);
 
-            scalarList energies = subDict.lookup("sputterEnergies");
+            scalarList energies = subDict.lookup("sputterEnergies");//Which energies do the sputterd species have
             energies_[id].transfer(energies);
 
-            scalarList probability = subDict.lookup("sputterProbabilities");
+            scalarList probability = subDict.lookup("sputterProbabilities");//Probabilities for the event to occur
             probability_[id].transfer(probability);
 
-            wordList typeIdWords = subDict.lookup("sputterSpecies");
+            wordList typeIdWords = subDict.lookup("sputterSpecies");//Which species to inject if a particle of typeId "id" hit the patch
 
-            if(typeIdWords.size() != energies_[id].size() || typeIdWords.size() != probability.size())
+            if(typeIdWords.size() != energies_[id].size() || typeIdWords.size() != probability.size())//All list should have the same size...
                 FatalErrorInFunction << "Different number of entries" << nl << abort(FatalError);
 
+            //Get the typeIds of the sputter species
             DynamicList<label> sputterSpecies;
             forAll(typeIdWords,i)
             {
@@ -105,15 +107,15 @@ void Foam::SputterEmission<CloudType>::collisionalEmission(typename CloudType::p
     Random& rndGen(cloud.rndGen());
 
     label typeId = p.typeId();
-    if(p.patch() == this->patchId() && species_[typeId].size() > 0)
+    if(p.patch() == this->patchId() && species_[typeId].size() > 0)//Check if the particle in on the associated patch and if we sputter for the species
     {
         forAll(probability_[typeId],i)
         {
                 scalar prop = probability_[typeId][i];
-                if(rndGen.scalar01() < prop)
+                if(rndGen.scalar01() < prop)//Check probability
                 {
                     scalar temperature;
-                    if(energies_[typeId][i] < 0.0)
+                    if(energies_[typeId][i] < 0.0)//If below zero use the energy of the colliding particle
                     {
                         //This calculation includes the dirft velocity, that is an error...
                         temperature = (p.U()&p.U())*cloud.constProps(typeId).mass()/(3*constant::physicoChemical::k.value());
@@ -121,7 +123,7 @@ void Foam::SputterEmission<CloudType>::collisionalEmission(typename CloudType::p
                     else
                         temperature = energies_[typeId][i]/*eV*/*constant::electromagnetic::e.value()/constant::physicoChemical::k.value();
 
-                    this->emitParticleExplicit(temperature,typeId,p.stepFraction(),p.nParticle());
+                    this->emitParticleExplicit(temperature,typeId,p.stepFraction(),p.nParticle());//Emit explicitly on the current processor
                 }
         }
     }

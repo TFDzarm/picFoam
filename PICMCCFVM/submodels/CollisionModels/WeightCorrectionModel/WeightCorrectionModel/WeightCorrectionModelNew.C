@@ -27,6 +27,10 @@ License
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+/*
+Foam::WeightCorrectionModel<CloudType>::New
+Create the model and return a smart pointer
+*/
 template<class CloudType>
 Foam::autoPtr<Foam::WeightCorrectionModel<CloudType>>
 Foam::WeightCorrectionModel<CloudType>::New
@@ -35,13 +39,14 @@ Foam::WeightCorrectionModel<CloudType>::New
     CloudType& owner
 )
 {
-    const word modelType(dict.lookup("WeightCorrection"));
+    const word modelType(dict.lookup("WeightCorrection"));//Lookup the selected model
 
     Info<< "|->    Selecting WeightCorrection model " << modelType << endl;
 
     typename dictionaryConstructorTable::iterator cstrIter =
         dictionaryConstructorTablePtr_->find(modelType);
 
+    //Unknown model, print all known...
     if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
         FatalErrorInFunction

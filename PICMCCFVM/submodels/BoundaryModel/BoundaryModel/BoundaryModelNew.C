@@ -27,6 +27,10 @@ License
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+/*
+Foam::BoundaryModel<CloudType>::New Called in setupModels of BoundaryModelList
+Create and return the pointer
+*/
 template<class CloudType>
 Foam::autoPtr<Foam::BoundaryModel<CloudType>>
 Foam::BoundaryModel<CloudType>::New
@@ -49,6 +53,7 @@ Foam::BoundaryModel<CloudType>::New
     typename dictionaryConstructorTable::iterator cstrIter =
         dictionaryConstructorTablePtr_->find(modelType);
 
+    //Model does not exist, print all known models
     if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
         FatalErrorInFunction

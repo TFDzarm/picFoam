@@ -47,6 +47,7 @@ Foam::RajuIonizationCS<CloudType,Type>::RajuIonizationCS
     /// Ionization CrossSection
     //////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    //Create a lookup table for interpolation
     //DynamicList<scalar> ionEnergies;
     DynamicList<scalar> ionizationCS;
 
@@ -75,6 +76,7 @@ Foam::RajuIonizationCS<CloudType,Type>::RajuIonizationCS
     }
     ionizationCS.append(raju_Qi.last());
 
+    //Save the lookup table
     ionizationCS_.transfer(ionizationCS);
 
 }
@@ -101,11 +103,11 @@ Foam::scalar Foam::RajuIonizationCS<CloudType,Type>::crossSection(scalar eVEnerg
        scalar d = s-scalar(l);
        Qi = (ionizationCS_[l+1]-ionizationCS_[l])*d + ionizationCS_[l];
     }
-    else//extrapolate
+    else
     {
         //scalar d = s - 99.0;
         //Qi = (ionizationCS_[99]-ionizationCS_[98])*d + ionizationCS_[99];
-        Qi = ionizationCS_[99];
+        Qi = ionizationCS_[99];//return the last entry
     }
     if(Qi <= 0.0)
        return 0.0;

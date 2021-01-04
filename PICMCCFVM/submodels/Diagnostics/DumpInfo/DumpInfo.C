@@ -63,7 +63,7 @@ template<class CloudType>
 void Foam::DumpInfo<CloudType>::info()
 {
     const CloudType& cloud(this->owner());
-    cloud.dumpParticle();
+    cloud.dumpParticle();//Function is handled in PICCloud
 }
 
 // ************************************************************************* //

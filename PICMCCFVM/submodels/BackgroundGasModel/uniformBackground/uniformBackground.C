@@ -27,6 +27,12 @@ License
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
+/*
+Foam::uniformBackground<CloudType>::uniformBackground
+
+Read in the options from constant/picProperties
+To define the density one can specify the number Density directly or the pressure.
+*/
 template<class CloudType>
 Foam::uniformBackground<CloudType>::uniformBackground
 (
@@ -39,7 +45,7 @@ Foam::uniformBackground<CloudType>::uniformBackground
     numberDensity_(owner.mesh().cells().size(),0.0),
     temperature_(owner.mesh().cells().size(),0.0),
     nParticle_(readScalar(this->coeffDict().lookup("nEquivalentParticles"))),
-    velocity_(this->coeffDict().lookup("velocity"))
+    velocity_(this->coeffDict().lookup("velocity"))//drift velocity
 {
 
     word species = this->coeffDict().lookup("species");
@@ -47,19 +53,19 @@ Foam::uniformBackground<CloudType>::uniformBackground
     if(id < 0)
         FatalErrorInFunction << "Undefined typeId " << species << abort(FatalError);
 
-    scalar numberDensity = this->coeffDict().lookupOrDefault("numberDensity",-1.0);
+    scalar numberDensity = this->coeffDict().lookupOrDefault("numberDensity",-1.0);//Number density, default value if entry doesn't exist -1
     scalar temperature = readScalar(this->coeffDict().lookup("temperature"));
     temperature_ = temperature;
 
     species_ = id;
-    if(numberDensity < 0.0)
+    if(numberDensity < 0.0)//If the default value is set, check if pressure was given
     {
         scalar pressure = this->coeffDict().lookupOrDefault("pressure",-1.0);
         if(pressure < 0.0)
             FatalErrorInFunction << "No keyword pressure or numberDensity defined." << abort(FatalError);
 
         if(temperature > VSMALL)
-            numberDensity_ = pressure/(temperature_*constant::physicoChemical::k.value());
+            numberDensity_ = pressure/(temperature_*constant::physicoChemical::k.value());//assume ideal gas law
         else
             numberDensity_ = pressure/(VSMALL*constant::physicoChemical::k.value());
     }
@@ -100,14 +106,14 @@ Foam::scalar Foam::uniformBackground<CloudType>::nParticle() const
 template<class CloudType>
 Foam::tmp<Foam::scalarField> Foam::uniformBackground<CloudType>::numberDensity() const
 {
-    tmp<scalarField> n(numberDensity_);
+    tmp<scalarField> n(numberDensity_);//Return a tmp field
     return n;
 }
 
 template<class CloudType>
 Foam::tmp<Foam::scalarField> Foam::uniformBackground<CloudType>::temperature() const
 {
-    tmp<scalarField> T(temperature_);
+    tmp<scalarField> T(temperature_);//Return a tmp field
     return T;
 }
 
@@ -117,7 +123,7 @@ Foam::vector Foam::uniformBackground<CloudType>::sampleVelocity(label celli)
     CloudType& cloud(this->owner());
 
     scalar mass = cloud.constProps(species_).mass();
-    return cloud.equipartitionLinearVelocity(temperature_[celli],mass)+velocity_;
+    return cloud.equipartitionLinearVelocity(temperature_[celli],mass)+velocity_;//Sample a velocity from Maxwell-Boltzmann distribution and add the drift velocity
 }
 
 

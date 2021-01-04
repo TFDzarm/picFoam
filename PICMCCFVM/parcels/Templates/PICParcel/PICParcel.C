@@ -28,6 +28,11 @@ License
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
+/*
+Foam::PICParcel<ParcelType>::move called by the cloud base class
+
+Update the velocity and move the parcel
+*/
 template<class ParcelType>
 template<class TrackCloudType>
 bool Foam::PICParcel<ParcelType>::move
@@ -41,7 +46,7 @@ bool Foam::PICParcel<ParcelType>::move
     td.switchProcessor = false;
     td.keepParticle = true;
 
-    //should move?
+    //should the parcel move?
     const constantProperties& constProps(cloud.constProps(typeId_));
     if(!constProps.solveMovement())
         return true;
@@ -49,7 +54,7 @@ bool Foam::PICParcel<ParcelType>::move
     //Update velocity only once! ::move is called again after processor switch
     if(charge() != 0.0 && this->stepFraction() == 0.0)
     {
-        cloud.particlePusher().updateVelocity(*this, trackTime);
+        cloud.particlePusher().updateVelocity(*this, trackTime);//call into the particle pusher submodel
     }
 
     //stop simulation if it becomes unphysical
@@ -60,12 +65,17 @@ bool Foam::PICParcel<ParcelType>::move
                    << "|v-c|: " << mag(U_) - constant::universal::c.value() << abort(FatalError);
     }
 
-    //actual move
+    //the actual move
     moveForward(cloud, td, trackTime);
 
-    return td.keepParticle;
+    return td.keepParticle;//particle will be removed in the base class if false
 }
 
+/*
+Foam::PICParcel<ParcelType>::moveForward called by Foam::PICParcel<ParcelType>::move
+
+Move the parcel from cell face to cell face and perform boundary interactions
+*/
 template<class ParcelType>
 template<class TrackCloudType>
 void Foam::PICParcel<ParcelType>::moveForward
@@ -117,13 +127,12 @@ void Foam::PICParcel<ParcelType>::moveForward
 
         const scalar f = 1 - p.stepFraction();
 
-        p.trackToAndHitFace(f*trackTime*Utracking - d, f, cloud, td);
+        p.trackToAndHitFace(f*trackTime*Utracking - d, f, cloud, td);//move to the next face and call the boundary interaction
 
         if(td.requireResync() && td.keepParticle)
         {
             resyncCount++;
-            if(resyncCount > 1) { //Rarely happens...
-                Pout << "WARNING parcel seems to be stuck... do not sync" << endl;
+            if(resyncCount > 1) { //Rarely happens... but the resync can get the parcel stuck, since the parcel should move less then a cell length, more than one sync indicates a stuck particle
                 td.requireResync() = false;
                 continue;
             }
@@ -134,7 +143,11 @@ void Foam::PICParcel<ParcelType>::moveForward
     }
 }
 
+/*
+Foam::PICParcel<ParcelType>::hitPatch called by the base class
 
+If we hit a patch first sync the particle then interact with it
+*/
 template<class ParcelType>
 template<class TrackCloudType>
 bool Foam::PICParcel<ParcelType>::hitPatch(TrackCloudType& cloud, trackingData& td)
@@ -155,6 +168,7 @@ bool Foam::PICParcel<ParcelType>::hitPatch(TrackCloudType& cloud, trackingData& 
 
 
     //Moved this from particleTemplates.C void Foam::particle::hitFace(...) to this place so we can do secondary emission after the hit!
+    //If we haven't hit a patch yet and the patch is a wall perform a wall interaction
     if (!hitPatch && isA<wallPolyPatch>(patch))
     {
         wallReflection(cloud, td);
@@ -169,7 +183,11 @@ bool Foam::PICParcel<ParcelType>::hitPatch(TrackCloudType& cloud, trackingData& 
     return hitPatch;
 }
 
+/*
+Foam::PICParcel<ParcelType>::hitProcessorPatch called by the base class
 
+Set td so the base class will perform a parallel communication
+*/
 template<class ParcelType>
 template<class TrackCloudType>
 void Foam::PICParcel<ParcelType>::hitProcessorPatch
@@ -192,6 +210,11 @@ void Foam::PICParcel<ParcelType>::hitSymmetryPatch(TrackCloudType&, trackingData
 }*/
 
 
+/*
+Foam::PICParcel<ParcelType>::syncVelocityAtBoundary
+
+If syncing is enabled, sync the velocity according to the current move fraction
+*/
 template<class ParcelType>
 template<class TrackCloudType>
 void Foam::PICParcel<ParcelType>::syncVelocityAtBoundary(TrackCloudType& cloud, scalar fraction)
@@ -203,6 +226,11 @@ void Foam::PICParcel<ParcelType>::syncVelocityAtBoundary(TrackCloudType& cloud, 
     }
 }
 
+/*
+Foam::PICParcel<ParcelType>::wallReflection
+
+Update fields and call the appropriate wall interaction model
+*/
 template<class ParcelType>
 template<class TrackCloudType>
 void Foam::PICParcel<ParcelType>::wallReflection
@@ -308,6 +336,11 @@ void Foam::PICParcel<ParcelType>::wallReflection
     td.requireResync() = true;
 }
 
+/*
+Foam::PICParcel<ParcelType>::specularReflect
+
+Simple specular reflection used by some models which are no wall and therefore do not update fields
+*/
 template<class ParcelType>
 void Foam::PICParcel<ParcelType>::specularReflect()
 {
@@ -321,6 +354,11 @@ void Foam::PICParcel<ParcelType>::specularReflect()
     }
 }
 
+/*
+Foam::PICParcel<ParcelType>::wallAbsorption
+
+Update fields and remove the particle
+*/
 template<class ParcelType>
 template<class TrackCloudType>
 void Foam::PICParcel<ParcelType>::wallAbsorption
@@ -388,6 +426,7 @@ void Foam::PICParcel<ParcelType>::wallAbsorption
     td.keepParticle = false;// Deletion
 }
 
+//Is not called, overwritten here just to make it clear!
 template<class ParcelType>
 template<class TrackCloudType>
 void Foam::PICParcel<ParcelType>::hitWallPatch

@@ -36,12 +36,13 @@ Foam::PrintParcelInfo<CloudType>::PrintParcelInfo
 )
 :
     DiagnosticInfo<CloudType>(dict,cloud,typeName),
-    printPosition_(false),
+    printPosition_(false),//Default values...
     printVelocity_(false),
     printSums_(false),
     sumPosition_(),
     sumVelocity_()
 {
+    //Which information do we want to print?
     printPosition_.readIfPresent("position",this->coeffDict());
     printVelocity_.readIfPresent("velocity",this->coeffDict());
     printSums_.readIfPresent("sums",this->coeffDict());
@@ -73,6 +74,7 @@ void Foam::PrintParcelInfo<CloudType>::gatherDiagnostic(const typename CloudType
 {
     const CloudType& cloud(this->owner());
 
+    //Directly print the info for every particle
     if(printPosition_)
         Info << "(" << p.origId() << ") [position]: " << cloud.mesh().time().timeName() << "," << p.position().x() << "," << p.position().y() << "," << p.position().z() << "\n";
     if(printVelocity_) {
@@ -83,6 +85,7 @@ void Foam::PrintParcelInfo<CloudType>::gatherDiagnostic(const typename CloudType
 
     }
 
+    //Add up the sums
     if(printSums_) {
         sumPosition_ += p.position();
         sumVelocity_ += p.U();
@@ -94,6 +97,7 @@ void Foam::PrintParcelInfo<CloudType>::gatherDiagnostic(const typename CloudType
 template<class CloudType>
 void Foam::PrintParcelInfo<CloudType>::info()
 {
+    //Print the sums
     if(printSums_) {
         reduce(sumPosition_, sumOp<vector>());
         reduce(sumVelocity_, sumOp<vector>());

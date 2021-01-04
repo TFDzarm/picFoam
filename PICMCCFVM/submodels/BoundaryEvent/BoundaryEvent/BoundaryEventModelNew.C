@@ -27,6 +27,11 @@ License
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+/*
+Foam::BoundaryEvent<CloudType>::New Called in setupModels of BoundaryEventModelList
+
+Create and return the pointer
+*/
 template<class CloudType>
 Foam::autoPtr<Foam::BoundaryEvent<CloudType>>
 Foam::BoundaryEvent<CloudType>::New
@@ -45,6 +50,7 @@ Foam::BoundaryEvent<CloudType>::New
     typename dictionaryConstructorTable::iterator cstrIter =
         dictionaryConstructorTablePtr_->find(modelType);
 
+    //Model was not found in the list, print all existing models
     if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
         FatalErrorInFunction

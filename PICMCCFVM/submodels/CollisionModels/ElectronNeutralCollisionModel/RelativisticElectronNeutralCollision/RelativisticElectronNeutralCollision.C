@@ -65,21 +65,26 @@ void Foam::RelativisticElectronNeutralCollision<CloudType>::updateVelocity(scala
     CloudType& cloud(this->owner());
     Random& rndGen(cloud.rndGen());
 
+    //Velocity references
     vector& Ue = parcelE.U();
     vector& Un = parcelN.U();
 
+    //TypeId and mass
     label idE = parcelE.typeId();
     scalar massE = cloud.constProps(idE).mass();
 
     label idN = parcelN.typeId();
     scalar massN = cloud.constProps(idN).mass();
 
+    //Lorentz factors for parcel E and N
     scalar gammaE = 1.0/sqrt(1.0-sqr(mag(Ue)/cu::c.value()));
     scalar gammaN = 1.0/sqrt(1.0-sqr(mag(Un)/cu::c.value()));
 
+    //Relativstic momentum
     vector pE = massE*gammaE*Ue;
     vector pN = massN*gammaN*Un;
 
+    //Relative veloctiy
     vector vc_r = (pE + pN) / (massE*gammaE+massN*gammaN);
     scalar magSqr_vcr = vc_r&vc_r;
 
@@ -97,13 +102,14 @@ void Foam::RelativisticElectronNeutralCollision<CloudType>::updateVelocity(scala
         gamma_c = 1.0/sqrt( 1.0 - magSqr_vcr/sqr(cu::c.value()));
         gammac_SrqVcr = ((gamma_c -1.0)/magSqr_vcr);
 
+        //Lorentz transformation to the Center of Mass system
         pE_CoM = pE + (gammac_SrqVcr*(vc_r&Ue)-gamma_c)*massE*gammaE*vc_r;
         //pQ_CoM = pQ + (gammac_SrqVcr*(vc_r&parcelQ->U())-gamma_c)*massQ*gammaQ*vc_r;
         gammaE_CoM = (1.0-(vc_r&Ue)/sqr(cu::c.value()))*gammaE*gamma_c;
         gammaN_CoM = (1.0-(vc_r&Un)/sqr(cu::c.value()))*gammaN*gamma_c;
     }
     scalar mag_pE_CoM = mag(pE_CoM);
-    if(mag_pE_CoM == 0.0)//okay?
+    if(mag_pE_CoM == 0.0)//? rarely happens
         return;
 
     scalar cosChi, sinChi;
@@ -113,7 +119,7 @@ void Foam::RelativisticElectronNeutralCollision<CloudType>::updateVelocity(scala
     }
     else {
         cosChi = 1.0/eV*(eV+2.-2.*::pow(1.+eV,rndGen.scalar01()));
-        if(cosChi*cosChi > 1.0) {//happens...
+        if(cosChi*cosChi > 1.0) {//floating point errors this happens rarely...
             cosChi = 1.0;
             sinChi = 0.0;
         }
@@ -129,6 +135,7 @@ void Foam::RelativisticElectronNeutralCollision<CloudType>::updateVelocity(scala
     vector new_pE_CoM;
     scalar p_perp = sqrt(pE_CoM.x()*pE_CoM.x() + pE_CoM.y()*pE_CoM.y());
     if( p_perp > 1.e-10*mag_pE_CoM ) {
+        //Scattering in the CoM frame
         scalar inv_p_perp = 1.0/p_perp;
         new_pE_CoM = vector( (pE_CoM.x() * pE_CoM.z() * sinCcosE - pE_CoM.y() * mag_pE_CoM * sinCsinE) * inv_p_perp + pE_CoM.x() * cosChi   ,\
                              (pE_CoM.y() * pE_CoM.z() * sinCcosE + pE_CoM.x() * mag_pE_CoM * sinCsinE) * inv_p_perp + pE_CoM.y() * cosChi   ,\
@@ -138,6 +145,7 @@ void Foam::RelativisticElectronNeutralCollision<CloudType>::updateVelocity(scala
         new_pE_CoM = vector(mag_pE_CoM*sinCcosE,mag_pE_CoM*sinCsinE,mag_pE_CoM*cosChi);
     }
 
+    //Transformation back to the parcel's frame
     vector new_pE = new_pE_CoM + vc_r*(gammac_SrqVcr*(vc_r&new_pE_CoM)+massE*gammaE_CoM*gamma_c);
     scalar new_gammaE = sqrt(1.0+sqr(mag(new_pE)/(massE*cu::c.value())));
 
@@ -148,6 +156,7 @@ void Foam::RelativisticElectronNeutralCollision<CloudType>::updateVelocity(scala
     Un = new_pN/(massN*new_gammaN);
 }
 
+//Same as above, but uses sampled velocity Un to calculate the scattering
 template<class CloudType>
 void Foam::RelativisticElectronNeutralCollision<CloudType>::updateVelocity(scalar eV, typename CloudType::parcelType& parcelE, vector& Un, label idN)
 {
@@ -193,7 +202,7 @@ void Foam::RelativisticElectronNeutralCollision<CloudType>::updateVelocity(scala
         gammaN_CoM = (1.0-(vc_r&Un)/sqr(cu::c.value()))*gammaN*gamma_c;
     }
     scalar mag_pE_CoM = mag(pE_CoM);
-    if(mag_pE_CoM == 0.0)//okay?
+    if(mag_pE_CoM == 0.0)//? rarely happens
         return;
 
     scalar cosChi;

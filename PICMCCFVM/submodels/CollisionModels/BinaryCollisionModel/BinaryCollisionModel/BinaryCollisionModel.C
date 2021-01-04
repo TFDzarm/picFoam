@@ -37,7 +37,7 @@ Foam::BinaryCollisionModel<CloudType>::BinaryCollisionModel(CloudType& owner)
     dict_(dictionary::null),
     owner_(owner),
     coeffDict_(dictionary::null),
-    sigmaTcRMax_
+    sigmaTcRMax_//Read the field from the time dir
     (
         IOobject
         (
@@ -49,7 +49,7 @@ Foam::BinaryCollisionModel<CloudType>::BinaryCollisionModel(CloudType& owner)
         ),
         owner.mesh()
     ),
-    sigmaTIoncRMax_
+    sigmaTIoncRMax_//Read the field from the time dir
     (
         IOobject
         (
@@ -144,7 +144,7 @@ Foam::BinaryCollisionModel<CloudType>::BinaryCollisionModel
     dict_(dict),
     owner_(owner),
     coeffDict_(dict.subDict(type + "Coeffs")),
-    sigmaTcRMax_
+    sigmaTcRMax_//Read the field from the time dir
     (
         IOobject
         (
@@ -156,7 +156,7 @@ Foam::BinaryCollisionModel<CloudType>::BinaryCollisionModel
         ),
         owner.mesh()
     ),
-    sigmaTIoncRMax_
+    sigmaTIoncRMax_//Read the field from the time dir
     (
         IOobject
         (
@@ -190,7 +190,7 @@ Foam::BinaryCollisionModel<CloudType>::BinaryCollisionModel
         owner.mesh(),
         dimensionedScalar("collisionSelectionIonRemainder", dimless, 0)
     ),
-    totalCrossSection_
+    totalCrossSection_//Construct the model
     (
         TotalCrossSectionModel<CloudType>::New
         (
@@ -242,14 +242,14 @@ Foam::BinaryCollisionModel<CloudType>::BinaryCollisionModel
        owner.mesh(),
        dimensionedScalar("backgroundCollisionRemainder_NeutralNeutral", dimless, 0)
    ),
-   weightCorrection_(
+   weightCorrection_(//Construct the model
        WeightCorrectionModel<CloudType>::New
        (
            coeffDict_,
            owner
        )
    ),
-   chargeExchangeCollision_(readBool(this->coeffDict().lookup("handleChargeExchange")))
+   chargeExchangeCollision_(readBool(this->coeffDict().lookup("handleChargeExchange")))//Do we use the simple model descriped by Nanbu?
 {
     if(chargeExchangeCollision_ && !isA<HardSphere<CloudType>>(totalCrossSection_()))
     {
@@ -261,7 +261,7 @@ Foam::BinaryCollisionModel<CloudType>::BinaryCollisionModel
     }
 
     const BackgroundGasModel<CloudType>& backgroundGas(owner.backgroundGas());
-    if(backgroundGas.active())
+    if(backgroundGas.active())//If we use a background gas model calculate the collision probability
     {
         label bgTypeId = backgroundGas.species();
         const scalarField& bgNumberDensity = backgroundGas.numberDensity();
@@ -287,7 +287,7 @@ Foam::BinaryCollisionModel<CloudType>::BinaryCollisionModel
              << "           avg sigmaTcRmax: " << average(sigmaTIoncRMax_.primitiveField()) << nl
              << "           avg collision Pmax: " << average(backgroundCollisionPropIon_.field()) << nl << endl;
     }
-    forAll(collisionSelectionRemainder_, i)
+    forAll(collisionSelectionRemainder_, i)//Initialize the remainders to a random value
     {
         collisionSelectionRemainder_[i] = owner.rndGen().scalar01();
         collisionSelectionIonRemainder_[i] = owner.rndGen().scalar01();
@@ -337,6 +337,11 @@ Foam::BinaryCollisionModel<CloudType>::coeffDict() const
     return coeffDict_;
 }
 
+/*
+Foam::BinaryCollisionModel<CloudType>::chargeExchangeCollision
+
+Perform a charge exchange, use a simple correction method of Particle is different.
+*/
 template<class CloudType>
 void Foam::BinaryCollisionModel<CloudType>::chargeExchangeCollision(typename CloudType::parcelType* pP, typename CloudType::parcelType* pQ)
 {
@@ -350,6 +355,12 @@ void Foam::BinaryCollisionModel<CloudType>::chargeExchangeCollision(typename Clo
     if(rndU <= pP->nParticle()/pQ->nParticle())
         pQ->U() = tmpP;
 }
+
+/*
+Foam::BinaryCollisionModel<CloudType>::chargeExchangeCollision
+
+Charge exchange collision with the background
+*/
 template<class CloudType>
 void Foam::BinaryCollisionModel<CloudType>::chargeExchangeCollision(typename CloudType::parcelType* pP, vector& Uq, label idQ)
 {
@@ -358,12 +369,22 @@ void Foam::BinaryCollisionModel<CloudType>::chargeExchangeCollision(typename Clo
     Uq = tmpP;
 }
 
+/*
+Foam::BinaryCollisionModel<CloudType>::elasticCollision
+
+Elastic collision with the background. Update the velocity by calling the chosen model.
+*/
 template<class CloudType>
 void Foam::BinaryCollisionModel<CloudType>::elasticCollision(typename CloudType::parcelType* pP, vector& Uq, label idQ)
 {
     updateVelocity(*pP,Uq,idQ);
 }
 
+/*
+Foam::BinaryCollisionModel<CloudType>::elasticCollision
+
+Elastic collision call the chosen model and correct the velocity if the particle weights are different.
+*/
 template<class CloudType>
 void Foam::BinaryCollisionModel<CloudType>::elasticCollision(typename CloudType::parcelType* pP, typename CloudType::parcelType* pQ)
 {
@@ -373,6 +394,7 @@ void Foam::BinaryCollisionModel<CloudType>::elasticCollision(typename CloudType:
     updateVelocity(*pP,*pQ);
     weightCorrection_->correctVelocity(pP,pQ,preUp,preUq);
 }
+
 
 template<class CloudType>
 void Foam::BinaryCollisionModel<CloudType>::performCollisions()
@@ -391,6 +413,7 @@ void Foam::BinaryCollisionModel<CloudType>::performCollisions()
     // Temporary storage for subCells
     List<DynamicList<label>> subCells(8);
 
+    //Used for counting the collision events
     label collisionCandidates = 0;
     label collisions = 0;
 
@@ -399,10 +422,10 @@ void Foam::BinaryCollisionModel<CloudType>::performCollisions()
 
     label chargeExchanges = 0;
 
-    DynamicList<typename CloudType::parcelType*> collisionList;
+    DynamicList<typename CloudType::parcelType*> collisionList;//Lists of particles that can collide
     DynamicList<typename CloudType::parcelType*> ionCollisionList;
 
-    forAll(sortedCellOccupancy, celli)// Go through all cells
+    forAll(sortedCellOccupancy, celli)// Go through all cells, add particles and look for the highest nParticle
     {
         label nC(0), iC(0);
         collisionList.clear();
@@ -422,7 +445,7 @@ void Foam::BinaryCollisionModel<CloudType>::performCollisions()
             }
 
         }
-        nParticleIonNeutalMax = nParticleNeutralMax;
+        nParticleIonNeutalMax = nParticleNeutralMax;//If there is no higher weight for the ions use the one for the neutrals
         forAll(chargedSpecies,i)//Species 1
         {
             if(chargedSpecies[i] == cloud.electronTypeId())
@@ -439,6 +462,7 @@ void Foam::BinaryCollisionModel<CloudType>::performCollisions()
             }
         }
 
+        //Number of particles
         nC = collisionList.size();
         iC = ionCollisionList.size();
 
@@ -478,6 +502,7 @@ void Foam::BinaryCollisionModel<CloudType>::performCollisions()
 
             scalar sigmaTcRMax = sigmaTcRMax_[celli];
 
+            //Calculate number of pairs that can collide
             scalar selectedPairs =
                     collisionSelectionRemainder_[celli]
                     + 0.5*nC*(nC - 1)*nParticleNeutralMax*sigmaTcRMax*deltaT
@@ -579,7 +604,7 @@ void Foam::BinaryCollisionModel<CloudType>::performCollisions()
         {
             scalar sigmaTcRMax = sigmaTIoncRMax_[celli];
 
-
+            //Calculate number of possible pairs
             scalar selectedPairs =
                     collisionSelectionIonRemainder_[celli]
                     + nC*iC*nParticleIonNeutalMax*sigmaTcRMax*deltaT
@@ -592,6 +617,7 @@ void Foam::BinaryCollisionModel<CloudType>::performCollisions()
             for (label c = 0; c < nCandidates; c++)
             {
 
+                //Pick random canidates
                 label candidateP = rndGen.sampleAB<label>(0, nC);
                 label candidateQ = rndGen.sampleAB<label>(0, iC);
 
@@ -622,7 +648,7 @@ void Foam::BinaryCollisionModel<CloudType>::performCollisions()
                 }
 
                 scalar rndU = rndGen.scalar01();
-                if((QeCR/sigmaTcRMax) > rndU)
+                if((QeCR/sigmaTcRMax) > rndU)//Elastic collision
                 {
                     elasticCollision
                     (
@@ -631,7 +657,7 @@ void Foam::BinaryCollisionModel<CloudType>::performCollisions()
                     );
                     ionCollisions++;
                 }
-                else if((QeCR+QexcCR)/sigmaTcRMax > rndU)
+                else if((QeCR+QexcCR)/sigmaTcRMax > rndU)//Charge exchange collision
                 {
                     chargeExchangeCollision
                     (
@@ -644,6 +670,7 @@ void Foam::BinaryCollisionModel<CloudType>::performCollisions()
             }
         }
     }
+    //Parallel COM number of events
     reduce(chargeExchanges,sumOp<label>());
     reduce(collisions, sumOp<label>());
 
@@ -656,6 +683,7 @@ void Foam::BinaryCollisionModel<CloudType>::performCollisions()
     sigmaTcRMax_.correctBoundaryConditions();
     sigmaTIoncRMax_.correctBoundaryConditions();
 
+    //Print some info
     if (collisionCandidates)
     {
         Info<< "    Collisions between neutral species  = "
@@ -706,6 +734,7 @@ void Foam::BinaryCollisionModel<CloudType>::performBackgroundCollisions()
 
     BackgroundGasModel<CloudType>& backgroundGas(cloud.backgroundGas());
 
+    //Used for counting events
     label collisionsIon = 0;
     label collisionsNeutral = 0;
     label collisionCandidatesIon = 0;
@@ -717,7 +746,7 @@ void Foam::BinaryCollisionModel<CloudType>::performBackgroundCollisions()
     backgroundCollisionPropIon_.field() = 1.0 -exp(-sigmaTIoncRMax_*tbgNumberDensity*dt);
     backgroundCollisionProp_.field() = 1.0 -exp(-sigmaTcRMax_*tbgNumberDensity*dt);
 
-    forAll(sortedCellOccupancy, celli)// Go through all cells
+    forAll(sortedCellOccupancy, celli)// Go through all cells and add the particles to the collision lists
     {
         label nN = 0;
         label nI = 0;
@@ -748,10 +777,10 @@ void Foam::BinaryCollisionModel<CloudType>::performBackgroundCollisions()
             }
         }
 
-
+        //Collision of neutrals with the background
         if(nN > 0)
         {
-            scalar collisions = backgroundCollisionProp_[celli]*nN+backgroundCSR_[celli];
+            scalar collisions = backgroundCollisionProp_[celli]*nN+backgroundCSR_[celli];//Calculate number of collisions
             label nCandidates(collisions);
             backgroundCSR_[celli] = collisions-nCandidates;
             collisionCandidatesNeutral += nCandidates;
@@ -759,6 +788,7 @@ void Foam::BinaryCollisionModel<CloudType>::performBackgroundCollisions()
 
             for (label i = 0; i < nCandidates; i++)
             {
+                //Pick random collision partners
                 label candidate = rndGen.sampleAB<label>(0, nN);//FIXME: candidate should only be selected ONCE !!!!!
                 typename CloudType::parcelType* parcel = collisionList[candidate];
 
@@ -771,6 +801,8 @@ void Foam::BinaryCollisionModel<CloudType>::performBackgroundCollisions()
                      U,
                      bgTypeId
                 );
+
+                //Update the maximum value
                 if (sTcR > sigmaTcRMax_[celli])
                 {
                     sigmaTcRMax_[celli] = sTcR;
@@ -780,7 +812,7 @@ void Foam::BinaryCollisionModel<CloudType>::performBackgroundCollisions()
                 if ((sTcR/sigmaTcRMax) > rndGen.scalar01())
                 {
                     collisionsNeutral++;
-                    elasticCollision
+                    elasticCollision//Perform the collision
                     (
                         parcel,
                         U,
@@ -791,9 +823,9 @@ void Foam::BinaryCollisionModel<CloudType>::performBackgroundCollisions()
             }
 
         }
-        if(nI > 0)
+        if(nI > 0)//Collisions of ions with the background
         {
-            scalar collisions = backgroundCollisionPropIon_[celli]*nI+backgroundCSRIon_[celli];
+            scalar collisions = backgroundCollisionPropIon_[celli]*nI+backgroundCSRIon_[celli];//Number of collisions
             label nCandidates(collisions);
             collisionCandidatesIon += nCandidates;
             backgroundCSRIon_[celli] = collisions-nCandidates;
@@ -802,6 +834,7 @@ void Foam::BinaryCollisionModel<CloudType>::performBackgroundCollisions()
 
             for (label i = 0; i < nCandidates; i++)
             {
+                //Pick random collision partners
                 label candidate = rndGen.sampleAB<label>(0, nI);//FIXME: candidate should only be selected ONCE !!!!!
                 typename CloudType::parcelType* parcel = ionCollisionList[candidate];
 
@@ -814,6 +847,8 @@ void Foam::BinaryCollisionModel<CloudType>::performBackgroundCollisions()
                      U,
                      bgTypeId
                 );
+
+                //Update the maximum value
                 if (sTcR > sigmaTIoncRMax_[celli])
                 {
                     sigmaTIoncRMax_[celli] = sTcR;
@@ -830,7 +865,7 @@ void Foam::BinaryCollisionModel<CloudType>::performBackgroundCollisions()
                 }
 
                 scalar rndU = rndGen.scalar01();
-                if((QeCR/sigmaTcRMax) > rndU)
+                if((QeCR/sigmaTcRMax) > rndU)//Elastic collision
                 {
                     elasticCollision
                     (
@@ -841,7 +876,7 @@ void Foam::BinaryCollisionModel<CloudType>::performBackgroundCollisions()
                     backgroundGas.collisionUpdate(CollisionEvent::Elastic, celli, preU, U);
                     collisionsIon++;
                 }
-                else if((QeCR+QexcCR)/sigmaTcRMax > rndU)
+                else if((QeCR+QexcCR)/sigmaTcRMax > rndU)//Charge exchange
                 {
                     chargeExchangeCollision
                     (
@@ -861,6 +896,7 @@ void Foam::BinaryCollisionModel<CloudType>::performBackgroundCollisions()
     sigmaTcRMax_.correctBoundaryConditions();
     sigmaTIoncRMax_.correctBoundaryConditions();
 
+    //Parallel COM number of events
     reduce(chargeExchanges,sumOp<label>());
     reduce(collisionsIon, sumOp<label>());
     reduce(collisionsNeutral, sumOp<label>());
@@ -868,6 +904,7 @@ void Foam::BinaryCollisionModel<CloudType>::performBackgroundCollisions()
     reduce(collisionCandidatesIon, sumOp<label>());
     reduce(collisionCandidatesNeutral, sumOp<label>());
 
+    //Print info
     if (collisionCandidatesNeutral)
     {
         Info << "    Collisions between neutals and background  = "
@@ -908,6 +945,9 @@ void Foam::BinaryCollisionModel<CloudType>::handleCollisions()
         performBackgroundCollisions();
 }
 
+/*
+Foam::BinaryCollisionModel<CloudType>::initialize called by picInitialise
+*/
 template<class CloudType>
 void Foam::BinaryCollisionModel<CloudType>::initialize(Field<scalar>& temperatures, Field<scalar>& numberDensities)
 {
@@ -925,6 +965,7 @@ void Foam::BinaryCollisionModel<CloudType>::initialize(Field<scalar>& temperatur
     label maxSpecies = neutralSpecies[0];//use first species if none is set
     scalar maxDensity = 0.0;
 
+    //Look for the most common neutral species
     scalar maxbgDensity = max(backgroundGas.numberDensity());
     scalar maxbgTemperature = max(backgroundGas.temperature());
     forAll(neutralSpecies,i)
@@ -954,9 +995,10 @@ void Foam::BinaryCollisionModel<CloudType>::initialize(Field<scalar>& temperatur
 
     if(T < VSMALL) {
         Warning << "    In initialization of sigmaTcRMax_: Zero temperature for " << cloud.typeIdList()[maxSpecies] << " species" << nl << "    |_ Using default value of 293.15 K..." << endl;
-        T = 293.15;
+        T = 293.15;//Default value was chosen to be 293.15
     }
 
+    //Initialize the sigmaTcRMax field
     sigmaTcRMax_.primitiveFieldRef() = cP.sigmaT()*cloud.maxwellianMostProbableSpeed
     (
         T,
@@ -969,7 +1011,7 @@ void Foam::BinaryCollisionModel<CloudType>::initialize(Field<scalar>& temperatur
     if(ionSpecies.size() == 0)
         return;
 
-
+    //Look for the most common ion species
     label maxIonSpecies = -1;
     scalar maxIonDensity = 0.0;
     forAll(ionSpecies,i)
@@ -999,7 +1041,7 @@ void Foam::BinaryCollisionModel<CloudType>::initialize(Field<scalar>& temperatur
         scalar Tion = temperatures[maxIonSpecies];
         if(Tion < VSMALL) {
             Warning << "    In initialization of sigmaTIoncRMax_: Zero temperature for ion species" << nl << "    |_ Using default value of 1 eV..." << endl;
-            Tion = 11604.52;
+            Tion = 11604.52;//Default value was chosen to be 1 eV
         }
 
         scalar Ui = cloud.maxwellianMostProbableSpeed
@@ -1009,7 +1051,7 @@ void Foam::BinaryCollisionModel<CloudType>::initialize(Field<scalar>& temperatur
         );
 
 
-
+        //Use the hard sphere model and update the sigmaTIoncRMax field
         scalar dPQ = 0.5*(cPIon.d()+cP.d());
         sigmaTIoncRMax_.primitiveFieldRef() = dPQ*dPQ*constant::mathematical::pi*Ui;
     }

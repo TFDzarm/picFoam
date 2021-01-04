@@ -55,6 +55,7 @@ void Foam::NoInflow<CloudType>::injection()
 template<class CloudType>
 bool Foam::NoInflow<CloudType>::particleBC(typename CloudType::parcelType& p, typename CloudType::parcelType::trackingData& td)
 {
+    //Remove the parcel
     td.keepParticle = false;
     return true;
 }

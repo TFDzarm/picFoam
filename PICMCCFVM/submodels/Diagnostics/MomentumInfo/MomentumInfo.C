@@ -62,7 +62,7 @@ void Foam::MomentumInfo<CloudType>::gatherDiagnostic(const typename CloudType::p
     const CloudType& cloud(this->owner());
     const typename CloudType::parcelType::constantProperties& cP = cloud.constProps(p.typeId());
 
-    momentumofTypes_[p.typeId()] += cP.mass()*p.U()*p.nParticle();
+    momentumofTypes_[p.typeId()] += cP.mass()*p.U()*p.nParticle();//Momentum of the sepcies
 }
 
 //- Print info
@@ -71,10 +71,14 @@ void Foam::MomentumInfo<CloudType>::info()
 {
     const CloudType& cloud(this->owner());
 
+    //Calculate total momentum
     vector linearMomentum = cloud.linearMomentumOfSystem();
+
+    //Parallel COM momentum
     reduce(linearMomentum, sumOp<vector>());
     Pstream::listCombineGather(momentumofTypes_, plusEqOp<vector>());
 
+    //Print the info
     Info << "   |Total linear momentum|          = "
          << mag(linearMomentum) << nl;
 

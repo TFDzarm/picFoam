@@ -33,8 +33,9 @@ namespace Foam
 {
     typedef PICCloud<picParcel> CloudType;
 
-    //Particle Pairing algorithm
-    makeParticleMerging(CloudType);
+    //Particle Pairing algorithms
+    makeParticleMerging(CloudType);//selection table definition
+
     makeParticleMergingType(NoMerging,CloudType);
     makeParticleMergingType(PairMerging,CloudType);
 }

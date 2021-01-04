@@ -56,14 +56,18 @@ int main(int argc, char *argv[])
 
     Info<< "\nStarting time loop\n" << endl;
 
+    //Time loop: functions loop checks 
     while (runTime.loop())
     {
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
+        //Evolve the PIC cloud (Particle Injection, Particle Movement, Collisions, Solve Fields,...)
         pic.evolve();
 
+        //Calculate and print diagnostics
         pic.info();
 
+        //Write fields if the writeTime condition is met
         runTime.write();
 
 

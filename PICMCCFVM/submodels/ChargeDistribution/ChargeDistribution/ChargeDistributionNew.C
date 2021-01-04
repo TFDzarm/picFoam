@@ -27,6 +27,11 @@ License
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+/*
+Foam::ChargeDistribution<CloudType>::New
+
+Create the model and return a smart pointer
+*/
 template<class CloudType>
 Foam::autoPtr<Foam::ChargeDistribution<CloudType>>
 Foam::ChargeDistribution<CloudType>::New

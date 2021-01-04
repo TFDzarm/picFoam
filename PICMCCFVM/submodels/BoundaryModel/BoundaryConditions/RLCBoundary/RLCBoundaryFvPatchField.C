@@ -56,7 +56,7 @@ Foam::RLCBoundaryFvPatchField::RLCBoundaryFvPatchField
     fvPatchField<scalar>(p, iF, dict),
     coeff1_(p.size(), Zero),
     coeff2_(p.size(), Zero),
-    Q_(dict.lookupOrDefault<scalar>("Q",0.0)),
+    Q_(dict.lookupOrDefault<scalar>("Q",0.0)),//Read inital values from the boundary definition
     Q1_(dict.lookupOrDefault<scalar>("Q1",0.0)),
     Q2_(dict.lookupOrDefault<scalar>("Q2",0.0)),
     Q3_(dict.lookupOrDefault<scalar>("Q3",0.0)),
@@ -160,7 +160,7 @@ void Foam::RLCBoundaryFvPatchField::evaluate(const Pstream::commsTypes)
         this->updateCoeffs();
     }
 
-    Field<scalar>::operator=((1.0-this->coeff1_/this->patch().deltaCoeffs())*this->patchInternalField());
+    Field<scalar>::operator=((1.0-this->coeff1_/this->patch().deltaCoeffs())*this->patchInternalField());//Update the field values in the patch (coeffs is set by the PICMCC lib)
     fvPatchField<scalar>::evaluate();
 }
 

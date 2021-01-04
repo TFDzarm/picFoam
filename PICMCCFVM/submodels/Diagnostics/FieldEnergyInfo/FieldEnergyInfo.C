@@ -72,7 +72,7 @@ void Foam::FieldEnergyInfo<CloudType>::gatherDiagnostic(const typename CloudType
     const CloudType& cloud(this->owner());
     const volScalarField& phiE(cloud.elpotentialField());
 
-    if(fromParcelDistribution_)
+    if(fromParcelDistribution_)//Only add this if we use the particles to calculate the field energy
         fieldEnergyofTypes_[p.typeId()] += p.charge()*p.nParticle()*phiE[p.cell()];
 }
 
@@ -91,11 +91,14 @@ void Foam::FieldEnergyInfo<CloudType>::info()
 
         scalar spaceChargeEnergy = 0.0;
 
+        //Energy in the field
         forAll(cloud.mesh().cells(),celli)
             spaceChargeEnergy+= phiE[celli]*spaceChargeDensity[celli]*cloud.mesh().cellVolumes()[celli];
 
+        //Parallel COM
         reduce(spaceChargeEnergy, sumOp<scalar>());
         Pstream::listCombineGather(fieldEnergyofTypes_, plusEqOp<scalar>());
+
         fieldEnergy = 0.5*sum(fieldEnergyofTypes_) + spaceChargeEnergy;
 
     }
@@ -103,6 +106,7 @@ void Foam::FieldEnergyInfo<CloudType>::info()
     {
         const volVectorField& Efield(cloud.electricField());
 
+        //Use the electric field to calculate the energy
         forAll(cloud.mesh().cells(),celli)
             fieldEnergy += magSqr(Efield[celli])*cloud.mesh().cellVolumes()[celli];
 

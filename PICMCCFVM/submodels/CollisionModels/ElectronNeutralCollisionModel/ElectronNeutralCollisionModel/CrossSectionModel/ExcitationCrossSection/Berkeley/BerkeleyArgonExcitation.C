@@ -41,6 +41,7 @@ Foam::BerkeleyArgonExcitationCS<CloudType,Type>::BerkeleyArgonExcitationCS
     CrossSectionModel<CloudType,Type>(cloud, associatedTypeId),
     excitationCS_()
 {
+    //Create interpolation table to speed up the calculation of the cross section
     label tableSize = 500;
 
     excitationCS_.setSize(tableSize);
@@ -70,6 +71,7 @@ Foam::scalar Foam::BerkeleyArgonExcitationCS<CloudType,Type>::crossSection(scala
 {
     scalar Qex = 0.0;
     label i(eVEnergy);
+    //Interpolate only in table range
     if(i < excitationCS_.size()-1)
     {
         scalar alpha = eVEnergy - i;

@@ -27,6 +27,7 @@ License
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+//Construct the model and return a smart pointer
 template<class CloudType>
 Foam::autoPtr<Foam::IonizationModel<CloudType>>
 Foam::IonizationModel<CloudType>::New
@@ -35,13 +36,14 @@ Foam::IonizationModel<CloudType>::New
     CloudType& owner
 )
 {
-    const word modelType(dict.lookup("IonizationModel"));
+    const word modelType(dict.lookup("IonizationModel"));//Lookup the model name
 
     Info<< "|->    Selecting IonizationModel " << modelType << endl;
 
     typename dictionaryConstructorTable::iterator cstrIter =
         dictionaryConstructorTablePtr_->find(modelType);
 
+    //Model not found...
     if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
         FatalErrorInFunction

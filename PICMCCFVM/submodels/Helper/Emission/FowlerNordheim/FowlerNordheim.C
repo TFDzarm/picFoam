@@ -73,7 +73,7 @@ void Foam::FowlerNordheim<CloudType>::emission()
 
     scalar j = 0.0;
     const volVectorField::Boundary& EBf(cloud.electricField().boundaryFieldRef());
-    forAll(EBf[this->patchId()],lF)
+    forAll(EBf[this->patchId()],lF)//calculate the current density on every face of the patch
     {
         vector Ei = EBf[this->patchId()][lF];
         if((Ei&this->patchNormals()[lF]) > 0.0)//patchNormal points out of the domain
@@ -87,14 +87,18 @@ void Foam::FowlerNordheim<CloudType>::emission()
             j += A_*magE*magE/fnW_/t_/t_*exp(-B_*v*sqrt(fnW_)*sqrt(fnW_)*sqrt(fnW_)/magE);
         }
     }
+    //Parallel COM sum up j_
     reduce(j,sumOp<scalar>());
 
-
+    //Calculate number of particles to be injected
     scalar nEmission = j*this->patchArea()*dt/(electronNequiv*electronMagCharge) + pRemainder_;
     label nEmit = label(nEmission);
     pRemainder_ = nEmission-scalar(nEmit);
 
+    //Print some info
     Info << "    FowlerNordheim emission " << nEmit << " parcels (rmdr: " << pRemainder_ << ")" << endl;
+
+    //Emit particles call into emitter class
     for(label i=0; i<nEmit; i++)
     {
         this->emitParticle(fnW_*electronMagCharge/constant::physicoChemical::k.value(),electronTypeId,electronNequiv);

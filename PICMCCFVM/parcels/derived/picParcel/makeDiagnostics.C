@@ -39,14 +39,16 @@ namespace Foam
 {
     typedef PICCloud<picParcel> CloudType;
 
+    //Define the selection table
     makeDiagnosticInfo(CloudType);
+
+    //Add the Diagnostic models
     makeDiagnosticInfoType(CloudCompositionInfo, CloudType);
     makeDiagnosticInfoType(MomentumInfo, CloudType);
     makeDiagnosticInfoType(KineticEnergyInfo, CloudType);
     makeDiagnosticInfoType(TemperatureInfo, CloudType);
     makeDiagnosticInfoType(FieldEnergyInfo, CloudType);
     makeDiagnosticInfoType(IonizationInfo, CloudType);
-
     makeDiagnosticInfoType(PrintParcelInfo, CloudType);
     makeDiagnosticInfoType(DumpInfo, CloudType);
 }

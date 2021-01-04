@@ -136,17 +136,17 @@ Foam::ElectronNeutralCollisionModel<CloudType>::ElectronNeutralCollisionModel
     dict_(dict),
     owner_(owner),
     coeffDict_(dict.subDict("ElectronNeutralCollisionCoeffs")),
-    elasticCSModels_
+    elasticCSModels_//init the elastic cross section model
     (
        coeffDict_.subDict("CrossSectionModels"),
        owner
     ),
-    excitationCSModels_
+    excitationCSModels_//init the excitation cross section model
     (
        coeffDict_.subDict("CrossSectionModels"),
        owner
     ),
-    ionizationCSModels_
+    ionizationCSModels_//init the ionization cross section model
     (
        coeffDict_.subDict("CrossSectionModels"),
        owner
@@ -238,6 +238,7 @@ Foam::ElectronNeutralCollisionModel<CloudType>::ElectronNeutralCollisionModel
 {
     const BackgroundGasModel<CloudType>& backgroundGas(owner.backgroundGas());
 
+    //If we have a background gas calculate the maximum total cross section and collision probability
     if(backgroundGas.active())
     {
         label bgTypeId = backgroundGas.species();
@@ -251,7 +252,8 @@ Foam::ElectronNeutralCollisionModel<CloudType>::ElectronNeutralCollisionModel
             scalar Qex = excitationCrossSections()[bgTypeId].crossSection(eV);
             scalar Qiz = ionizationCrossSections()[bgTypeId].crossSection(eV);
 
-            backgroundSigmaTcRMax_ =  max(backgroundSigmaTcRMax_,::sqrt(2.0*constant::electromagnetic::e.value()*eV/massE)*(Qel+Qex+Qiz)); //first case where i need const props in init YEAH :)
+            backgroundSigmaTcRMax_ =  max(backgroundSigmaTcRMax_,::sqrt(2.0*constant::electromagnetic::e.value()*eV/massE)*(Qel+Qex+Qiz));
+            //collision probability
             backgroundCollisionProp_ = 1.0 -exp(-backgroundSigmaTcRMax_*backgroundGas.numberDensity()*dt);
         }
 
@@ -321,6 +323,10 @@ void Foam::ElectronNeutralCollisionModel<CloudType>::handleCollisions()
         performBackgroundCollisions();
 }
 
+/*
+Foam::ElectronNeutralCollisionModel<CloudType>::initialize called by picInitialise
+Setup the total cross section
+*/
 template<class CloudType>
 void Foam::ElectronNeutralCollisionModel<CloudType>::initialize(Field<scalar>& temperatures, Field<scalar>& numberDensities)
 {
@@ -337,6 +343,7 @@ void Foam::ElectronNeutralCollisionModel<CloudType>::initialize(Field<scalar>& t
         return;
     }
 
+    //Calculate the maximum neutral gas density
     scalar maxbgDensity = max(backgroundGas.numberDensity());
     label maxSpecies = neutralSpecies[0];//use first species if none is set
     scalar maxDensity = 0.0;
@@ -362,11 +369,13 @@ void Foam::ElectronNeutralCollisionModel<CloudType>::initialize(Field<scalar>& t
     const typename CloudType::parcelType::constantProperties& cP(cloud.constProps(cloud.electronTypeId()));
     scalar eVkinEnergy = T*constant::physicoChemical::k.value()/constant::electromagnetic::e.value();
 
+    //Calculate the total cross section
     scalar Qel = elasticCrossSections()[maxSpecies].crossSection(eVkinEnergy);
     scalar Qex = excitationCrossSections()[maxSpecies].crossSection(eVkinEnergy);
     scalar Qi = ionizationCrossSections()[maxSpecies].crossSection(eVkinEnergy);
     scalar Qt = Qel+Qex+Qi;
 
+    //Init sigmaTcRMax
     sigmaTcRMax_.primitiveFieldRef() = Qt*cloud.maxwellianMostProbableSpeed
     (
          T,
@@ -382,14 +391,15 @@ void Foam::ElectronNeutralCollisionModel<CloudType>::elasticCollision(scalar eV,
     CloudType& cloud(this->owner());
     vector preUe, preUn;
 
+    //If the pointer to the neutral species is null we perform a collision with the background gas model
     if(pN != nullptr) {
         preUe = pE->U();
         preUn = pN->U();
-        updateVelocity(eV,*pE,*pN);
+        updateVelocity(eV,*pE,*pN);//scatter
 
-        weightCorrection_->correctVelocity(pE,pN,preUe,preUn);
+        weightCorrection_->correctVelocity(pE,pN,preUe,preUn);//correct weight if necessary
 
-        if(!this->updateNeutralVelocity())
+        if(!this->updateNeutralVelocity())//reset if option is selected
             pN->U() = preUn;
 
     }
@@ -413,22 +423,23 @@ void Foam::ElectronNeutralCollisionModel<CloudType>::excitationCollision(scalar 
     vector preUe, preUn;
     scalar preEV = eV;
 
-    //Excitation
+    //Excitation, remove the threshold energy
     pE->U() = pE->U() * ::sqrt(1.0 - threshold/eV); //exUe
     eV -= threshold;
 
+    //If the pointer to the neutral species is null we perform a collision with the background gas model
     if(pN != nullptr) {
         preUe = pE->U();
         preUn = pN->U();
 
-        updateVelocity(eV,*pE,*pN);
+        updateVelocity(eV,*pE,*pN);//scatter
 
         if(isA<NanbuWeightCorrectionModel<CloudType>>(weightCorrection_())) //nanbu weight correction set preUe = pE->U() / ::sqrt(1.0 - threshold/eV)
             preUe /= ::sqrt(1.0 - threshold/preEV);
 
-        weightCorrection_->correctVelocity(pE,pN,preUe,preUn);
+        weightCorrection_->correctVelocity(pE,pN,preUe,preUn);//correct weight if necessary
 
-        if(!this->updateNeutralVelocity())
+        if(!this->updateNeutralVelocity())//reset if option is selected
             pN->U() = preUn;
 
     }
@@ -450,31 +461,36 @@ bool Foam::ElectronNeutralCollisionModel<CloudType>::ionizationCollision(scalar 
     CloudType& cloud(this->owner());
     Random& rndGen(cloud.rndGen());
 
-    bool state = false;//ion created or not
+    bool state = false;//If an Ion was created or not
     vector preUe, preUn;
 
     scalar massE = cloud.constProps(pE->typeId()).mass();
 
+    //Correct the electrons energy for an ionization event based on the threshold
     scalar E0 = 2.0 - 100.0/(eV+10.0);
     scalar E1 = (eV-threshold)/2.0 - E0;
     scalar alpha = 10.3;
     scalar Ep = E0 + alpha*::tan(rndGen.scalar01()*(::atan(E1/alpha)+::atan(E0/alpha))-::atan(E0/alpha));
 
-    preUe = pE->U();//use "nabbu-ish" weigthing correction, also needed for new electron
-    pE->U() = pE->U()*::sqrt(1.0-(threshold+Ep)/eV);//tildv
+    preUe = pE->U();//use "nabbu-ish" weigthing correction, since we can directly use the weight correction model, also needed for new electron
+    pE->U() = pE->U()*::sqrt(1.0-(threshold+Ep)/eV);//tilde v as in Nanbu
     eV -= (threshold+Ep);
 
-
+    //If the pointer to the neutral species is null we perform a collision with the background gas model
     if(pN != nullptr) {
+
+        //Weight fractions used for correction
         scalar wE = pE->nParticle();
         scalar wN = (ionizationNEquivalentParticles_ > 0.0 ? ionizationNEquivalentParticles_ : pN->nParticle());
         scalar wEwN = wE/wN;
         scalar wNwE = 1./wEwN;
 
         preUn = pN->U();
-        updateVelocity(eV,*pE,*pN);
+        updateVelocity(eV,*pE,*pN);//Scatter, updated velocities will be used further down
 
         scalar rndU = this->owner().rndGen().scalar01();
+
+        //Only create the ion with a propability of wE/wN
         if(rndU <= wEwN) {
             typename CloudType::parcelType* pIon = cloud.addNewParcel(pN->position(),pN->cell(),pN->U(),cloud.ionTypeId(pN->typeId()));//copy already scatted neutral
             pIon->nParticle() = wN;//set weight of new ion to that of the neutral
@@ -484,12 +500,13 @@ bool Foam::ElectronNeutralCollisionModel<CloudType>::ionizationCollision(scalar 
             pE->U() = preUe;//so reset velocity
         }
 
+        //Only create the new electron with a propability of wE/wN
         if(rndU <= wEwN) {
             typename CloudType::parcelType* pEnew = cloud.addNewParcel(pE->position(),pE->cell(), \
                             (preUe/mag(preUe))*::sqrt(2.0*Ep*constant::electromagnetic::e.value()/massE),pE->typeId());//tildvp
             pEnew->nParticle() = wN;//set weight of new electron to that of the neutral
 
-            updateVelocity(Ep,*pEnew,preUn,pN->typeId());
+            updateVelocity(Ep,*pEnew,preUn,pN->typeId());//Update the velocity if the new electron using energy Ep
         }
 
         if(!this->updateNeutralVelocity())//in the case we dont delete this is needed
@@ -550,24 +567,31 @@ void Foam::ElectronNeutralCollisionModel<CloudType>::performBackgroundCollisions
     label ionizations = 0;
     label collisionCandidates = 0;
 
-    //update background (can have changed) FIXME: use update flag?
+    //update background (may have changed) FIXME: use update flag?
     backgroundCollisionProp_ = 1.0 -exp(-backgroundSigmaTcRMax_*backgroundGas.numberDensity()*cloud.mesh().time().deltaTValue());
 
-    forAll(sortedCellOccupancy, celli)// Go through all cells
+    // Go through all cells
+    forAll(sortedCellOccupancy, celli)
     {
+        //Number of electrons
         DynamicList<typename CloudType::parcelType*>& electronParcels(sortedCellOccupancy[celli][eTypeId]);
         label eC = electronParcels.size();
 
+        //Calculate the number of candidates for a collision
         scalar collisions = backgroundCollisionProp_[celli]*eC+backgroundCollisionRemainder_[celli];
         label nCandidates(collisions);
         collisionCandidates+=nCandidates;
+        //Save the remainder
         backgroundCollisionRemainder_[celli] = collisions-nCandidates;
 
+        //Go through nCandidates and check if a collision occurs
         for (label i = 0; i < nCandidates; i++)
         {
+            //Pick a random electron
             label candidateE = rndGen.sampleAB<label>(0, eC);//FIXME: candidate should only be selected ONCE !!!!!
             typename CloudType::parcelType* electron = electronParcels[candidateE];
 
+            //Calculate the cross section
             scalar massE = cloud.constProps(eTypeId).mass();
             scalar Ue = mag(electron->U());
             scalar gammaE=1.0/::sqrt(1.0-((electron->U()&electron->U())/(constant::universal::c.value()*constant::universal::c.value())));
@@ -582,20 +606,21 @@ void Foam::ElectronNeutralCollisionModel<CloudType>::performBackgroundCollisions
             scalar Qiz = ionizationCrossSections()[bgTypeId].crossSection(eVkinEnergy);
             scalar izThreshold = ionizationCrossSections()[bgTypeId].threshold();
 
+            //Compare against the maximum cross section
             scalar rndU = rndGen.scalar01();
-            if(rndU <= (sumSigmaT = Qel)/sigmaT)
+            if(rndU <= (sumSigmaT = Qel)/sigmaT)//elastic collision
             {
                 elastics++;
                 elasticCollision(eVkinEnergy,electron,nullptr);
                 elasticCollisions_[celli] += 1.0;
             }
-            else if(eVkinEnergy >= exThreshold && rndU <= (sumSigmaT+=Qex)/sigmaT)
+            else if(eVkinEnergy >= exThreshold && rndU <= (sumSigmaT+=Qex)/sigmaT)//excitation collision
             {
                 excitations++;
                 excitationCollision(eVkinEnergy,exThreshold,electron,nullptr);
                 excitationCollisions_[celli] += 1.0;
             }
-            else if(eVkinEnergy >= izThreshold && rndU <= (sumSigmaT+=Qiz)/sigmaT)
+            else if(eVkinEnergy >= izThreshold && rndU <= (sumSigmaT+=Qiz)/sigmaT)//ionization collision
             {
                 bool ionCreated = ionizationCollision(eVkinEnergy,izThreshold,electron,nullptr);
                 if(ionCreated) {
@@ -606,6 +631,7 @@ void Foam::ElectronNeutralCollisionModel<CloudType>::performBackgroundCollisions
         }
     }
 
+    //Print some information
     reduce(collisionCandidates, sumOp<label>());
     reduce(elastics, sumOp<label>());
     reduce(excitations, sumOp<label>());
@@ -655,10 +681,12 @@ void Foam::ElectronNeutralCollisionModel<CloudType>::performCollisions()
     label excitations = 0;
     label ionizations = 0;
 
-    forAll(sortedCellOccupancy, celli)// Go through all cells
+    // Go through all cells
+    forAll(sortedCellOccupancy, celli)
     {
         DynamicList<typename CloudType::parcelType*>& electronParcels(sortedCellOccupancy[celli][electronTypeId]);
 
+        //Get the maximum electron parcel weight in this cell
         forAll(electronParcels,i) {
             typename CloudType::parcelType* p = electronParcels[i];
 
@@ -666,11 +694,13 @@ void Foam::ElectronNeutralCollisionModel<CloudType>::performCollisions()
             if(nParticle > nParticleMax)
                 nParticleMax = nParticle;
         }
+        //Check all neutral species
         forAll(neutralSpecies,i)
         {
             label neutralTypeId = neutralSpecies[i];
             DynamicList<typename CloudType::parcelType*>& cellParcels(sortedCellOccupancy[celli][neutralTypeId]);
 
+            //Get the maximum neutral parcel weight in this cell
             forAll(cellParcels,i) {
                 typename CloudType::parcelType* p = cellParcels[i];
 
@@ -679,15 +709,15 @@ void Foam::ElectronNeutralCollisionModel<CloudType>::performCollisions()
                     nParticleMax = nParticle;
             }
 
+            //Do both species exist in this cell?
             label nC = cellParcels.size();
             label eC = electronParcels.size();
             if(nC > 0 && eC > 0)
             {
-                //No subcell check
-
                 scalar sigmaTcRMax = sigmaTcRMax_[celli];
 
-                //FIXME: collisionRemainder_ multiple neutral species!!!
+                //Calculate number of candidates
+                //FIXME: collisionRemainder_ in the case of multiple neutral species!!!
                 scalar selectedPairs =
                         collisionRemainder_[celli]
                         + eC*nC*nParticleMax*sigmaTcRMax*deltaT
@@ -697,14 +727,17 @@ void Foam::ElectronNeutralCollisionModel<CloudType>::performCollisions()
                 collisionRemainder_[celli] = selectedPairs - nCandidates;
                 collisionCandidates += nCandidates;
 
+                //Check nCandidates
                 for (label c = 0; c < nCandidates; c++)
                 {
+                    //Pick random parcels
                     label candidateP = rndGen.sampleAB<label>(0, nC);
                     typename CloudType::parcelType* neutral = cellParcels[candidateP];
 
                     label candidateQ = rndGen.sampleAB<label>(0, eC);
                     typename CloudType::parcelType* electron = electronParcels[candidateQ];
 
+                    //Relative velocity
                     scalar cR = mag(electron->U()-neutral->U());
 
                     //scalar massN = cloud.constProps(neutralTypeId).mass();
@@ -715,6 +748,7 @@ void Foam::ElectronNeutralCollisionModel<CloudType>::performCollisions()
                     scalar gammaE=1.0/::sqrt(1.0-((cR*cR)/(constant::universal::c.value()*constant::universal::c.value())));
                     scalar eVkinEnergy = (gammaE-1.0)*massE*constant::universal::c.value()*constant::universal::c.value()/(constant::electromagnetic::e.value());
 
+                    //Calculate total cross section
                     scalar Qel = elasticCrossSections()[neutralTypeId].crossSection(eVkinEnergy);
                     scalar Qex = excitationCrossSections()[neutralTypeId].crossSection(eVkinEnergy);
                     scalar Qi = ionizationCrossSections()[neutralTypeId].crossSection(eVkinEnergy);
@@ -723,18 +757,20 @@ void Foam::ElectronNeutralCollisionModel<CloudType>::performCollisions()
                     scalar exThreshold = excitationCrossSections()[neutralTypeId].threshold();
                     scalar izThreshold = ionizationCrossSections()[neutralTypeId].threshold();
 
+                    //Update sigmaTcRMax_ if the current one is large
                     if(Qt*cR > sigmaTcRMax_[celli]) {
                         sigmaTcRMax_[celli] = Qt*cR;
                     }
 
+                    //Check if a collision occurs
                     scalar rndU = rndGen.scalar01();
-                    if(rndU <= Qel*cR/sigmaTcRMax)
+                    if(rndU <= Qel*cR/sigmaTcRMax)//elastic collision
                     {
                         collisions++;
                         elasticCollision(eVkinEnergy, electron, neutral);
                         elasticCollisions_[celli] += 1.0;
                     }
-                    else if(eVkinEnergy >= exThreshold && rndU <= (Qel+Qex)*cR/sigmaTcRMax)
+                    else if(eVkinEnergy >= exThreshold && rndU <= (Qel+Qex)*cR/sigmaTcRMax)//excitation collision
                     {
                         collisions++;
                         excitations++;
@@ -742,7 +778,7 @@ void Foam::ElectronNeutralCollisionModel<CloudType>::performCollisions()
                         excitationCollision(eVkinEnergy, Eth, electron, neutral);
                         excitationCollisions_[celli] += 1.0;
                     }
-                    else if(eVkinEnergy >= izThreshold && rndU <= Qt*cR/sigmaTcRMax)
+                    else if(eVkinEnergy >= izThreshold && rndU <= Qt*cR/sigmaTcRMax)//ionization collision
                     {
                         collisions++;
 
@@ -752,8 +788,9 @@ void Foam::ElectronNeutralCollisionModel<CloudType>::performCollisions()
                         {
                             ionizations++;
                             ionizationCollisions_[celli] += 1.0;
-                            if(deleteNeutrals())
+                            if(deleteNeutrals())//should neutrals be removed? (can be specified)
                             {
+                                //Update the cell parcel list
                                 typename DynamicList<typename CloudType::parcelType*>::iterator iter = cellParcels.begin()+candidateP;
                                 cellParcels.erase(iter);
                                 cloud.deleteParticle(*neutral);
@@ -769,10 +806,9 @@ void Foam::ElectronNeutralCollisionModel<CloudType>::performCollisions()
         }
     }
 
+    //Print some information
     reduce(collisions, sumOp<label>());
-
     reduce(collisionCandidates, sumOp<label>());
-
     reduce(excitations, sumOp<label>());
     reduce(ionizations, sumOp<label>());
 
