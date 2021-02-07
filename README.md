@@ -5,9 +5,7 @@ The solver is developed at ZARM (Center of Applied Space Technology and Microgra
 
 ## Publications
 
-**Preprint**
-
-1. [picFoam: An OpenFOAM based electrostatic Particle-in-Cell solver](http://arxiv.org/abs/2012.14724)
+1. [picFoam: An OpenFOAM based electrostatic Particle-in-Cell solver](https://doi.org/10.1016/j.cpc.2021.107853) ([preprint](http://arxiv.org/abs/2012.14724))
 
 # Instructions
 
