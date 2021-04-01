@@ -94,7 +94,7 @@ void Foam::HigueraCaryPusher<CloudType>::updateVelocity(typename CloudType::parc
     //rotation
     if(calcMagneticRotation_)
     {
-        scalar gfm2 = Foam::sqrt(1.0+Foam::sqr((Foam::mag(rU)/constant::universal::c.value())));
+        scalar gfm2 = 1.0+Foam::sqr((Foam::mag(rU)/constant::universal::c.value()));
 
         vector t = charge_dt2_over_mass*B[celli];
 
@@ -141,7 +141,7 @@ vector Foam::HigueraCaryPusher<CloudType>::correctedVelocity(const typename Clou
     //rotation
     if(calcMagneticRotation_)
     {
-        scalar gfm2 = Foam::sqrt(1.0+Foam::sqr((Foam::mag(rU)/constant::universal::c.value())));
+        scalar gfm2 = 1.0+Foam::sqr((Foam::mag(rU)/constant::universal::c.value()));
 
         vector t = charge_dt2_over_mass*B[celli];
 
