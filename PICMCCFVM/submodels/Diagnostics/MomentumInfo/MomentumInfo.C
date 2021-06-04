@@ -71,12 +71,11 @@ void Foam::MomentumInfo<CloudType>::info()
 {
     const CloudType& cloud(this->owner());
 
-    //Calculate total momentum
-    vector linearMomentum = cloud.linearMomentumOfSystem();
-
     //Parallel COM momentum
-    reduce(linearMomentum, sumOp<vector>());
     Pstream::listCombineGather(momentumofTypes_, plusEqOp<vector>());
+    //Calculate total momentum
+    vector linearMomentum = sum(momentumofTypes_);
+
 
     //Print the info
     Info << "   |Total linear momentum|          = "

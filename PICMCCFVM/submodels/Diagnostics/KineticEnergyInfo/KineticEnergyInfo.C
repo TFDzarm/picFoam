@@ -88,9 +88,8 @@ void Foam::KineticEnergyInfo<CloudType>::info()
     const CloudType& cloud(this->owner());
 
     //Parallel COM
-    scalar linearKineticEnergy = cloud.linearKineticEnergyOfSystem();
-    reduce(linearKineticEnergy, sumOp<scalar>());
     Pstream::listCombineGather(kineticEnergyofTypes_, plusEqOp<scalar>());
+    scalar linearKineticEnergy = sum(kineticEnergyofTypes_);
 
     //Print the info
     Info << "    Total linear kinetic energy     = "
