@@ -39,7 +39,7 @@ edges
 
 boundary
 (
-    leftBoundary
+    source
     {
         type patch;
         faces
@@ -47,7 +47,7 @@ boundary
             (3 0 1 2)
         );
     }
-    rightBoundary
+    collector
     {
         type patch;
         faces
