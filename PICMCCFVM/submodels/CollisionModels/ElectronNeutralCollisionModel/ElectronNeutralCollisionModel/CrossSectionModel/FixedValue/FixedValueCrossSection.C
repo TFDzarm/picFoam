@@ -99,7 +99,7 @@ Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::ElectronExciation
 :
     CrossSectionModel<CloudType,Foam::crossSectionType::ElectronExciationCS>(dict, cloud, "Exciation" + typeName ,associatedTypeId),
     value_(readScalar(this->coeffDict().lookup("value"))),
-    threshold_(readScalar(this->coeffDict().lookup("value")))
+    threshold_(readScalar(this->coeffDict().lookup("threshold")))
 {}
 
 
@@ -137,7 +137,7 @@ Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::ElectronIonizatio
 :
     CrossSectionModel<CloudType,Foam::crossSectionType::ElectronIonizationCS>(dict, cloud, "Ionization" + typeName ,associatedTypeId),
     value_(readScalar(this->coeffDict().lookup("value"))),
-    threshold_(readScalar(this->coeffDict().lookup("value")))
+    threshold_(readScalar(this->coeffDict().lookup("threshold")))
 {}
 
 
