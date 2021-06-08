@@ -94,8 +94,8 @@ void Foam::NanbuCollision<CloudType>::collide
     scalar g_mag = mag(g);
 
     //Impact parameter
-    scalar b0 = chargeP*chargeQ/(2.0*cm::pi*ce::epsilon0.value()*reMass*g_mag*g_mag);//FIXME: Needs to use <g^2> instead if g^2...
-    scalar b_min = max(cu::h.value()/(2.0*(g_mag*reMass)),b0);// Perez et al.: de-Broglie wavelength (unsure if g and reMass should be used), b0 (Nanbu97)
+    scalar b0 = chargeP*chargeQ/(2.0*cm::pi*ce::epsilon0.value()*reMass*g_mag*g_mag);
+    scalar b_min = max(cu::h.value()/(2.0*(g_mag*reMass)),mag(b0));//Perez et al.: de-Broglie wavelength or b0 (Nanbu97)
 
 
     //Get the coulomb log
