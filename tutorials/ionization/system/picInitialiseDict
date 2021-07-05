@@ -42,5 +42,14 @@ solveMaxwellEquations       false;
 initalizeLeapFrog           false;
 clearParticles              true;
 
+CrossSectionInitialization
+{
+    electronNeutral FindMaximum;
+    electronNeutral_searchParameter
+    {
+        maximumEnergy 500.0;
+        energyStep    0.1;
+    }
+}
 
 // ************************************************************************* //
