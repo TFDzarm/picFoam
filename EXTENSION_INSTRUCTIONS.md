@@ -22,13 +22,14 @@ These include:
 * **BoundaryModel**: Boundary models which are responsible for injecting new particles and defining the boundary interaction (e.g. circuits). 
 * **ChargeDistribution**: Models which distribute the particle's charge to the charge density field *rhoCharge*.
 * ***CollisionModels***
-	* **BinaryCollisionModel**: This model handles binary collisions between neutral species and neutral-ion species.
+	* **BinaryCollisionModel**: This model handles binary collisions between neutral species.
 		* **TotalCrossSectionModel**: Models which define the total cross section for species undergoing binary collision.
 	* **CoulombCollisionModel**: This model handles coulomb collisions between charged particles.
 		* **PairingAlgorithm**: Models which are responsible for pairing charged particle to perform a single binary collision with a large scattering angle.
 		* **IonizationModel**: Models that describe the ionization occurring in the collision of charged particles.
 	* **ElectronNeutralCollisionModel**: Collisions between electrons and neutral species.
-		* **CrossSectionModel**: Models defining the cross section for different interactions between electrons and neutrals.
+	* **IonNeutralCollisionModel**: Collisions between one ion and one neutral species.
+	* **CrossSectionModel**: Models defining the cross section for different interactions between electrons and neutrals as well as ion and neutrals.
 	* **WeightCorrectionModel**: Models for correcting the post-collision velocities in the case of a collision between parcels of unequal weight.
 * **Diagnostics**: Diagnostic calculations.
 * **FieldWeighting**: Models for weighing the electric field to the particle's position.
