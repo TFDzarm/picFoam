@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Copyright (C) 2018-2020 picFoam
+    \\  /    A nd           | Copyright (C) 2018-2021 picFoam
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -23,17 +23,15 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "BerkeleyHeliumElastic.H"
+#include "BerkeleyHeliumChargeEx.H"
 #include "constants.H"
 
 using namespace Foam::constant::mathematical;
 
-// ------------------------------- Electron-Neutral -------------------------------
-
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 template<class CloudType, Foam::crossSectionType Type>
-Foam::BerkeleyHeliumElasticCS<CloudType,Type>::BerkeleyHeliumElasticCS
+Foam::BerkeleyHeliumChargeExCS<CloudType,Type>::BerkeleyHeliumChargeExCS
 (
     const dictionary& dict,
     CloudType& cloud,
@@ -47,70 +45,34 @@ Foam::BerkeleyHeliumElasticCS<CloudType,Type>::BerkeleyHeliumElasticCS
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
 template<class CloudType, Foam::crossSectionType Type>
-Foam::BerkeleyHeliumElasticCS<CloudType,Type>::~BerkeleyHeliumElasticCS()
+Foam::BerkeleyHeliumChargeExCS<CloudType,Type>::~BerkeleyHeliumChargeExCS()
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 template<class CloudType, Foam::crossSectionType Type>
-Foam::scalar Foam::BerkeleyHeliumElasticCS<CloudType,Type>::crossSection(scalar eVEnergy) const
-{
-    scalar Qel = 8.5e-19/(pow(eVEnergy+10.0, 1.1));
-    return Qel;
-}
-
-
-template<class CloudType, Foam::crossSectionType Type>
-Foam::scalar Foam::BerkeleyHeliumElasticCS<CloudType,Type>::threshold() const
-{
-    return 0.0;
-}
-
-// ------------------------------- Ion-Neutral -------------------------------
-
-// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-
-template<class CloudType>
-Foam::BerkeleyHeliumElasticCS<CloudType,crossSectionType::IonElasticCS>::BerkeleyHeliumElasticCS
-(
-    const dictionary& dict,
-    CloudType& cloud,
-    const label& associatedTypeId
-)
-:
-    CrossSectionModel<CloudType,crossSectionType::IonElasticCS>(cloud, associatedTypeId)
-{}
-
-
-// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
-
-template<class CloudType>
-Foam::BerkeleyHeliumElasticCS<CloudType,crossSectionType::IonElasticCS>::~BerkeleyHeliumElasticCS()
-{}
-
-
-// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
-
-template<class CloudType>
-Foam::scalar Foam::BerkeleyHeliumElasticCS<CloudType,crossSectionType::IonElasticCS>::crossSection(scalar eVEnergy) const
+Foam::scalar Foam::BerkeleyHeliumChargeExCS<CloudType,Type>::crossSection(scalar eVEnergy) const
 {
     scalar crossx;
-    if(eVEnergy < 0.01)
+
+    if(eVEnergy < 0.01)//min
     {
         eVEnergy = 0.01;
     }
-
-    crossx = 3.6463e-19/::sqrt(eVEnergy) - 7.9897e-21;
-    if(crossx < 0)
+    if(eVEnergy < 377.8)//cutoff
     {
-        return 0.0;
+        crossx = 1.2996e-19  - 7.8872e-23*eVEnergy + 1.9873e-19/::sqrt(eVEnergy);
+    }
+    else
+    {
+        crossx = (1.5554e-18*::log(eVEnergy)/eVEnergy) + 8.6407e-20;
     }
     return crossx;
 }
 
-template<class CloudType>
-Foam::scalar Foam::BerkeleyHeliumElasticCS<CloudType,crossSectionType::IonElasticCS>::threshold() const
+template<class CloudType, Foam::crossSectionType Type>
+Foam::scalar Foam::BerkeleyHeliumChargeExCS<CloudType,Type>::threshold() const
 {
     return 0.0;
 }

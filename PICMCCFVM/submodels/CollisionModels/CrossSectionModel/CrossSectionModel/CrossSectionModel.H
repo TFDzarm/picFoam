@@ -53,7 +53,9 @@ enum class crossSectionType
 {
     ElectronElasticCS,
     ElectronExciationCS,
-    ElectronIonizationCS
+    ElectronIonizationCS,
+    IonElasticCS,
+    IonChargeExCS
 };
 
 template<class CloudType, crossSectionType Type>

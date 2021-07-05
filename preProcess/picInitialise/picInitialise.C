@@ -211,6 +211,7 @@ int main(int argc, char *argv[])
 
         pic.binaryCollision().initialize(initializationModel->temperatures(),initializationModel->numberDensities());
         pic.electronNeutralCollision().initialize(initializationModel->temperatures(),initializationModel->numberDensities());
+        pic.ionNeutralCollision().initialize(initializationModel->temperatures(),initializationModel->numberDensities());
     }
     Info << endl;
 

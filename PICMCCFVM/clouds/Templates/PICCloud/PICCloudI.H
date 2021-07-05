@@ -269,6 +269,21 @@ Foam::PICCloud<ParcelType>::electronNeutralCollision()
 }
 
 template<class ParcelType>
+inline const Foam::IonNeutralCollisionModel<Foam::PICCloud<ParcelType>>&
+Foam::PICCloud<ParcelType>::ionNeutralCollision() const
+{
+    return ionNeutralCollisionModel_;
+}
+
+
+template<class ParcelType>
+inline Foam::IonNeutralCollisionModel<Foam::PICCloud<ParcelType>>&
+Foam::PICCloud<ParcelType>::ionNeutralCollision()
+{
+    return ionNeutralCollisionModel_();
+}
+
+template<class ParcelType>
 inline Foam::BackgroundGasModel<Foam::PICCloud<ParcelType>>&
 Foam::PICCloud<ParcelType>::backgroundGas()
 {

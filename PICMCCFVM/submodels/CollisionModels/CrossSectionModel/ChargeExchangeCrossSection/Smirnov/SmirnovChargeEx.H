@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2018-2021 picFoam
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -22,16 +22,16 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::HardSphere
+    Foam::SmirnovChargeEx
 
 Description
-    Elastic cross section model for Helium.
-    Copied from XPDP1: https://ptsg.egr.msu.edu
+    Simple ChargeExchange cross sections
+    Boris M. Smirnov - Theory of Gas Discharge Plasma p.63
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef BerkeleyHeliumElastic_H
-#define BerkeleyHeliumElastic_H
+#ifndef SmirnovChargeEx_H
+#define SmirnovChargeEx_H
 
 #include "CrossSectionModel.H"
 #include "ListListOps.H"
@@ -40,24 +40,34 @@ Description
 namespace Foam
 {
 /*---------------------------------------------------------------------------*\
-                      Class HardSphere Declaration
+                      Class SmirnovChargeEx Declaration
 \*---------------------------------------------------------------------------*/
 
+//sigma = C ln^2(v0/v)
+// => sigma = (sqrt(C)*ln(v0)-sqrt(c)ln(v))^2
+// parameter1 = sqrt(C)*ln(v0)
+// parameter2 = sqrt(C)
+//e.g. Helium in Angstrom^2
+// parameter1: 5.5
+// parameter2: 0.28
 template<class CloudType, crossSectionType Type>
-class BerkeleyHeliumElasticCS
+class SmirnovChargeExCS
 :
     public CrossSectionModel<CloudType,Type>
 {
+    //
+    scalar coeff1_;
+    scalar coeff2_;
 public:
 
     //- Runtime type information
-    TypeName("BerkeleyHelium");
+    TypeName("Smirnov");
 
 
     // Constructors
 
         //- Construct from dictionary
-        BerkeleyHeliumElasticCS
+        SmirnovChargeExCS
         (
             const dictionary& dict,
             CloudType& cloud,
@@ -66,58 +76,13 @@ public:
 
 
     //- Destructor
-    virtual ~BerkeleyHeliumElasticCS();
+    virtual ~SmirnovChargeExCS();
 
     virtual autoPtr<CrossSectionModel<CloudType,Type>> clone() const
     {
             return autoPtr<CrossSectionModel<CloudType,Type>>
             (
-                new BerkeleyHeliumElasticCS<CloudType,Type>(*this)
-            );
-    }
-
-
-    // Member Functions
-
-        //- Calculate the cross section
-        virtual scalar crossSection(scalar eVEnergy) const;
-
-        //- Return the threshold
-        virtual scalar threshold() const;
-
-};
-
-//Ion-Neutral Collision
-template<class CloudType>
-class BerkeleyHeliumElasticCS<CloudType,crossSectionType::IonElasticCS>
-:
-    public CrossSectionModel<CloudType,crossSectionType::IonElasticCS>
-{
-public:
-
-    //- Runtime type information
-    TypeName("BerkeleyHelium");
-
-
-    // Constructors
-
-        //- Construct from dictionary
-        BerkeleyHeliumElasticCS
-        (
-            const dictionary& dict,
-            CloudType& cloud,
-            const label& associatedTypeId
-        );
-
-
-    //- Destructor
-    virtual ~BerkeleyHeliumElasticCS();
-
-    virtual autoPtr<CrossSectionModel<CloudType,crossSectionType::IonElasticCS>> clone() const
-    {
-            return autoPtr<CrossSectionModel<CloudType,crossSectionType::IonElasticCS>>
-            (
-                new BerkeleyHeliumElasticCS<CloudType,crossSectionType::IonElasticCS>(*this)
+                new SmirnovChargeExCS<CloudType,Type>(*this)
             );
     }
 
@@ -139,7 +104,7 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-    #include "BerkeleyHeliumElastic.C"
+    #include "SmirnovChargeEx.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

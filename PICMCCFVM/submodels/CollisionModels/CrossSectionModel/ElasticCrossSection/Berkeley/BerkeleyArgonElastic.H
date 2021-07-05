@@ -94,6 +94,52 @@ public:
 };
 
 
+//Ion-Neutral Collision
+template<class CloudType>
+class BerkeleyArgonElasticCS<CloudType,crossSectionType::IonElasticCS>
+:
+    public CrossSectionModel<CloudType,crossSectionType::IonElasticCS>
+{
+//Private Data
+public:
+
+    //- Runtime type information
+    TypeName("BerkeleyArgon");
+
+
+    // Constructors
+
+        //- Construct from dictionary
+        BerkeleyArgonElasticCS
+        (
+            const dictionary& dict,
+            CloudType& cloud,
+            const label& associatedTypeId
+        );
+
+
+    //- Destructor
+    virtual ~BerkeleyArgonElasticCS();
+
+    virtual autoPtr<CrossSectionModel<CloudType,crossSectionType::IonElasticCS>> clone() const
+    {
+            return autoPtr<CrossSectionModel<CloudType,crossSectionType::IonElasticCS>>
+            (
+                new BerkeleyArgonElasticCS<CloudType,crossSectionType::IonElasticCS>(*this)
+            );
+    }
+
+
+    // Member Functions
+
+        //- Calculate the cross section
+        virtual scalar crossSection(scalar eVEnergy) const;
+
+        //- Return the threshold
+        virtual scalar threshold() const;
+};
+
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 } // End namespace Foam

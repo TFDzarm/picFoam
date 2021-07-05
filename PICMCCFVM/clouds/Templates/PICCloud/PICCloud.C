@@ -36,6 +36,7 @@ License
 #include "BoundaryEvent.H"
 #include "BoundaryEventModelList.H"
 #include "ElectronNeutralCollisionModel.H"
+#include "IonNeutralCollisionModel.H"
 #include "BoundaryModelList.H"
 #include "DiagnosticsList.H"
 #include "BackgroundGasModel.H"
@@ -447,6 +448,14 @@ void Foam::PICCloud<ParcelType>::setModels()
             *this
         ).ptr()
     );
+    //Pick the ion-neutral collision model.
+    ionNeutralCollisionModel_.reset(
+        IonNeutralCollisionModel<PICCloud<ParcelType>>::New
+        (
+            particleProperties_.subDict("CollisionModels"),
+            *this
+            ).ptr()
+    );
     //Pick the solver for the electric field.
     maxwellSolver_.reset(
         MaxwellSolver<PICCloud<ParcelType>>::New
@@ -504,6 +513,9 @@ void Foam::PICCloud<ParcelType>::collisions()
 
     if (electronNeutralCollision().active())
         electronNeutralCollision().handleCollisions();
+
+    if (ionNeutralCollision().active())
+        ionNeutralCollision().handleCollisions();
 
     if (binaryCollision().active())
         binaryCollision().handleCollisions();
@@ -931,6 +943,7 @@ Foam::PICCloud<ParcelType>::PICCloud
     particlePusher_(),
     coulombCollisionModel_(),
     electronNeutralCollisionModel_(),
+    ionNeutralCollisionModel_(),
     backgroundGas_(),
     particleMerging_(),
     boundaryEvents_(*this),
@@ -1233,6 +1246,7 @@ Foam::PICCloud<ParcelType>::PICCloud
     particlePusher_(),
     coulombCollisionModel_(),
     electronNeutralCollisionModel_(),
+    ionNeutralCollisionModel_(),
     backgroundGas_(),
     particleMerging_(),
     boundaryEvents_(*this),

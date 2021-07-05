@@ -22,42 +22,43 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::FixedValueCrossSection
+    Foam::ListCrossSection
 
 Description
     Simple fixed value cross section used for testing.
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef FixedValueCrossSection_H
-#define FixedValueCrossSection_H
+#ifndef ListCrossSection_H
+#define ListCrossSection_H
 
 #include "CrossSectionModel.H"
+#include "Field.H"
 #include "ListListOps.H"
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
 {
 /*---------------------------------------------------------------------------*\
-                      Class FixedValueCrossSection Declaration
+                      Class ListCrossSection Declaration
 \*---------------------------------------------------------------------------*/
 
 //Base Template
 template<class CloudType, crossSectionType Type>
-class FixedValueCrossSection
+class ListCrossSection
 :
     public CrossSectionModel<CloudType,Type>
 {
 public:
 
     //- Runtime type information
-    TypeName("FixedValue");
+    TypeName("List");
 
 
     // Constructors
 
         //- Construct from dictionary
-        FixedValueCrossSection
+        ListCrossSection
         (
             const dictionary& dict,
             CloudType& cloud,
@@ -66,13 +67,13 @@ public:
 
 
     //- Destructor
-    virtual ~FixedValueCrossSection();
+    virtual ~ListCrossSection();
 
     virtual autoPtr<CrossSectionModel<CloudType,Type>> clone() const
     {
             return autoPtr<CrossSectionModel<CloudType,Type>>
             (
-                new FixedValueCrossSection<CloudType,Type>(*this)
+                new ListCrossSection<CloudType,Type>(*this)
             );
     }
 
@@ -89,23 +90,25 @@ public:
 
 //Template specialization Elastic
 template <class CloudType>
-class FixedValueCrossSection<CloudType,crossSectionType::ElectronElasticCS>
+class ListCrossSection<CloudType,crossSectionType::ElectronElasticCS>
 :
     public CrossSectionModel<CloudType,crossSectionType::ElectronElasticCS>
 {
 //Private data
 
-    //- the fixed value
-    scalar value_;
+    //- the values
+    Field<scalar> energies_;
+    Field<scalar> values_;
+
 public:
     //- Runtime type information
-    TypeName("FixedValue");
+    TypeName("List");
 
 
     // Constructors
 
         //- Construct from dictionary
-        FixedValueCrossSection
+        ListCrossSection
         (
             const dictionary& dict,
             CloudType& cloud,
@@ -114,13 +117,13 @@ public:
 
 
     //- Destructor
-    virtual ~FixedValueCrossSection();
+    virtual ~ListCrossSection();
 
     virtual autoPtr<CrossSectionModel<CloudType,crossSectionType::ElectronElasticCS>> clone() const
     {
             return autoPtr<CrossSectionModel<CloudType,crossSectionType::ElectronElasticCS>>
             (
-                new FixedValueCrossSection<CloudType,crossSectionType::ElectronElasticCS>(*this)
+                new ListCrossSection<CloudType,crossSectionType::ElectronElasticCS>(*this)
             );
     }
 
@@ -139,24 +142,25 @@ public:
 
 //Template specialization Excitation
 template <class CloudType>
-class FixedValueCrossSection<CloudType,crossSectionType::ElectronExciationCS>
+class ListCrossSection<CloudType,crossSectionType::ElectronExciationCS>
 :
     public CrossSectionModel<CloudType,crossSectionType::ElectronExciationCS>
 {
 //Private data
 
     //- the fixed value and threshold
-    scalar value_;
+    Field<scalar> energies_;
+    Field<scalar> values_;
     scalar threshold_;
 public:
     //- Runtime type information
-    TypeName("FixedValue");
+    TypeName("List");
 
 
     // Constructors
 
         //- Construct from dictionary
-        FixedValueCrossSection
+        ListCrossSection
         (
             const dictionary& dict,
             CloudType& cloud,
@@ -165,13 +169,13 @@ public:
 
 
     //- Destructor
-    virtual ~FixedValueCrossSection();
+    virtual ~ListCrossSection();
 
     virtual autoPtr<CrossSectionModel<CloudType,crossSectionType::ElectronExciationCS>> clone() const
     {
             return autoPtr<CrossSectionModel<CloudType,crossSectionType::ElectronExciationCS>>
             (
-                new FixedValueCrossSection<CloudType,crossSectionType::ElectronExciationCS>(*this)
+                new ListCrossSection<CloudType,crossSectionType::ElectronExciationCS>(*this)
             );
     }
 
@@ -190,24 +194,25 @@ public:
 
 //Template specialization Ionization
 template <class CloudType>
-class FixedValueCrossSection<CloudType,crossSectionType::ElectronIonizationCS>
+class ListCrossSection<CloudType,crossSectionType::ElectronIonizationCS>
 :
     public CrossSectionModel<CloudType,crossSectionType::ElectronIonizationCS>
 {
 //Private data
 
     //- the fixed value and threshold
-    scalar value_;
+    Field<scalar> energies_;
+    Field<scalar> values_;
     scalar threshold_;
 public:
     //- Runtime type information
-    TypeName("FixedValue");
+    TypeName("List");
 
 
     // Constructors
 
         //- Construct from dictionary
-        FixedValueCrossSection
+        ListCrossSection
         (
             const dictionary& dict,
             CloudType& cloud,
@@ -216,13 +221,13 @@ public:
 
 
     //- Destructor
-    virtual ~FixedValueCrossSection();
+    virtual ~ListCrossSection();
 
     virtual autoPtr<CrossSectionModel<CloudType,crossSectionType::ElectronIonizationCS>> clone() const
     {
             return autoPtr<CrossSectionModel<CloudType,crossSectionType::ElectronIonizationCS>>
             (
-                new FixedValueCrossSection<CloudType,crossSectionType::ElectronIonizationCS>(*this)
+                new ListCrossSection<CloudType,crossSectionType::ElectronIonizationCS>(*this)
             );
     }
 
@@ -238,25 +243,27 @@ public:
 };
 
 
+
 //Template specialization IonElastic
 template <class CloudType>
-class FixedValueCrossSection<CloudType,crossSectionType::IonElasticCS>
+class ListCrossSection<CloudType,crossSectionType::IonElasticCS>
     :
     public CrossSectionModel<CloudType,crossSectionType::IonElasticCS>
 {
     //Private data
 
     //- the fixed value
-    scalar value_;
+    Field<scalar> energies_;
+    Field<scalar> values_;
 public:
     //- Runtime type information
-    TypeName("FixedValue");
+    TypeName("List");
 
 
     // Constructors
 
     //- Construct from dictionary
-    FixedValueCrossSection
+    ListCrossSection
         (
             const dictionary& dict,
             CloudType& cloud,
@@ -265,13 +272,13 @@ public:
 
 
     //- Destructor
-    virtual ~FixedValueCrossSection();
+    virtual ~ListCrossSection();
 
     virtual autoPtr<CrossSectionModel<CloudType,crossSectionType::IonElasticCS>> clone() const
     {
         return autoPtr<CrossSectionModel<CloudType,crossSectionType::IonElasticCS>>
             (
-                new FixedValueCrossSection<CloudType,crossSectionType::IonElasticCS>(*this)
+                new ListCrossSection<CloudType,crossSectionType::IonElasticCS>(*this)
                 );
     }
 
@@ -286,26 +293,28 @@ public:
 
 };
 
+
 //Template specialization IonChargeExchange
 template <class CloudType>
-class FixedValueCrossSection<CloudType,crossSectionType::IonChargeExCS>
+class ListCrossSection<CloudType,crossSectionType::IonChargeExCS>
     :
     public CrossSectionModel<CloudType,crossSectionType::IonChargeExCS>
 {
     //Private data
 
     //- the fixed value and threshold
-    scalar value_;
+    Field<scalar> energies_;
+    Field<scalar> values_;
     scalar threshold_;
 public:
     //- Runtime type information
-    TypeName("FixedValue");
+    TypeName("List");
 
 
     // Constructors
 
     //- Construct from dictionary
-    FixedValueCrossSection
+    ListCrossSection
         (
             const dictionary& dict,
             CloudType& cloud,
@@ -314,13 +323,13 @@ public:
 
 
     //- Destructor
-    virtual ~FixedValueCrossSection();
+    virtual ~ListCrossSection();
 
     virtual autoPtr<CrossSectionModel<CloudType,crossSectionType::IonChargeExCS>> clone() const
     {
         return autoPtr<CrossSectionModel<CloudType,crossSectionType::IonChargeExCS>>
             (
-                new FixedValueCrossSection<CloudType,crossSectionType::IonChargeExCS>(*this)
+                new ListCrossSection<CloudType,crossSectionType::IonChargeExCS>(*this)
                 );
     }
 
@@ -334,6 +343,10 @@ public:
     virtual scalar threshold() const;
 
 };
+
+
+
+
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -342,7 +355,7 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-    #include "FixedValueCrossSection.C"
+    #include "ListCrossSection.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

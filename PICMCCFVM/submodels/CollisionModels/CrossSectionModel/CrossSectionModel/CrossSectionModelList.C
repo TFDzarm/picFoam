@@ -70,6 +70,12 @@ Foam::CrossSectionList<CloudType,Type>::CrossSectionList
                 modelName = subDict.lookup<word>("ExcitationCrossSection");
             else if(Type == Foam::crossSectionType::ElectronIonizationCS)
                 modelName = subDict.lookup<word>("IonizationCrossSection");
+            else if(Type == Foam::crossSectionType::IonElasticCS)
+                modelName = subDict.lookup<word>("ElasticCrossSection");
+            else if(Type == Foam::crossSectionType::IonChargeExCS)
+                modelName = subDict.lookup<word>("ChargeExchangeCrossSection");
+            //none if nothing found...
+
             //Construct the model
             this->set(
                           typeId,

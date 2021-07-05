@@ -48,6 +48,9 @@ License
 #include "TakizukaAbePairing.H"
 #include "NanbuYonemuraPairing.H"
 
+#include "NoIonNeutralCollision.H"
+#include "IonIsotropicScattering.H"
+
 #include "NoElectronNeutralCollision.H"
 #include "NanbuElectronNeutralCollision.H"
 #include "RelativisticElectronNeutralCollision.H"
@@ -70,6 +73,12 @@ License
 
 #include "NoIonization.H"
 #include "PerezIonizationModel.H"
+
+#include "ListCrossSection.H"
+
+#include "SmirnovChargeEx.H"
+#include "BerkeleyArgonChargeEx.H"
+#include "BerkeleyHeliumChargeEx.H"
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
@@ -123,6 +132,11 @@ namespace Foam
     makeElectronNeutralCollisionModelType(NanbuElectronNeutralCollision, CloudType);
     makeElectronNeutralCollisionModelType(RelativisticElectronNeutralCollision, CloudType);
 
+    //Ion neutral collison models
+    makeIonNeutralCollisionModel(PICCloud<picParcel>);
+    makeIonNeutralCollisionModelType(NoIonNeutralCollision, CloudType);
+    makeIonNeutralCollisionModelType(IonIsotropicScattering, CloudType);
+
     //CrossSection Models for electron neutral collision
     typedef CrossSectionModel<CloudType, crossSectionType::ElectronElasticCS> elasticCS;
     makeCSModel(elasticCS);
@@ -132,6 +146,13 @@ namespace Foam
 
     typedef CrossSectionModel<CloudType, crossSectionType::ElectronIonizationCS> ionizationCS;
     makeCSModel(ionizationCS);
+
+    //For ion-neutral collisions
+    typedef CrossSectionModel<CloudType, crossSectionType::IonElasticCS> ionElasticCS;
+    makeCSModel(ionElasticCS);
+
+    typedef CrossSectionModel<CloudType, crossSectionType::IonChargeExCS> ionChargeExCS;
+    makeCSModel(ionChargeExCS);
 
     //Raju Argon Elastic, Excitation, Ionization
     makeCSType(RajuElasticCS,CloudType, crossSectionType::ElectronElasticCS);
@@ -143,16 +164,20 @@ namespace Foam
     makeCSType(BerkeleyArgonElasticCS,CloudType, crossSectionType::ElectronElasticCS);
     makeCSType(BerkeleyArgonExcitationCS,CloudType, crossSectionType::ElectronExciationCS);
     makeCSType(BerkeleyArgonIonizationCS,CloudType, crossSectionType::ElectronIonizationCS);
+    makeCSType(BerkeleyArgonChargeExCS,CloudType, crossSectionType::IonChargeExCS);
 
     //Helium
     makeCSType(BerkeleyHeliumElasticCS,CloudType, crossSectionType::ElectronElasticCS);
     makeCSType(BerkeleyHeliumExcitationCS,CloudType, crossSectionType::ElectronExciationCS);
     makeCSType(BerkeleyHeliumIonizationCS,CloudType, crossSectionType::ElectronIonizationCS);
+    makeCSType(BerkeleyHeliumChargeExCS,CloudType, crossSectionType::IonChargeExCS);
 
     //Fixed cross section model
     makeCSTypeMulti(FixedValueCrossSection, elasticCS, CloudType, crossSectionType::ElectronElasticCS);
     makeCSTypeMulti(FixedValueCrossSection, exciationCS, CloudType, crossSectionType::ElectronExciationCS);
     makeCSTypeMulti(FixedValueCrossSection, ionizationCS, CloudType, crossSectionType::ElectronIonizationCS);
+    makeCSTypeMulti(FixedValueCrossSection,ionElasticCS,CloudType, crossSectionType::IonElasticCS);
+    makeCSTypeMulti(FixedValueCrossSection,ionChargeExCS,CloudType, crossSectionType::IonChargeExCS);
 
     //Argon ionization
     makeCSType(KimCarlsonCrossSection,CloudType, crossSectionType::ElectronIonizationCS);
@@ -168,7 +193,18 @@ namespace Foam
     makeCSTypeMulti(NoCrossSection,elasticCS,CloudType, crossSectionType::ElectronElasticCS);
     makeCSTypeMulti(NoCrossSection,exciationCS,CloudType, crossSectionType::ElectronExciationCS);
     makeCSTypeMulti(NoCrossSection,ionizationCS,CloudType, crossSectionType::ElectronIonizationCS);
+    makeCSTypeMulti(NoCrossSection,ionElasticCS,CloudType, crossSectionType::IonElasticCS);
+    makeCSTypeMulti(NoCrossSection,ionChargeExCS,CloudType, crossSectionType::IonChargeExCS);
 
+    //List cross section
+    makeCSTypeMulti(ListCrossSection, elasticCS, CloudType, crossSectionType::ElectronElasticCS);
+    makeCSTypeMulti(ListCrossSection, exciationCS, CloudType, crossSectionType::ElectronExciationCS);
+    makeCSTypeMulti(ListCrossSection, ionizationCS, CloudType, crossSectionType::ElectronIonizationCS);
+    makeCSTypeMulti(ListCrossSection,ionElasticCS,CloudType, crossSectionType::IonElasticCS);
+    makeCSTypeMulti(ListCrossSection,ionChargeExCS,CloudType, crossSectionType::IonChargeExCS);
+
+    //ChargeExchange
+    makeCSType(SmirnovChargeExCS,CloudType, crossSectionType::IonChargeExCS);
 }
 
 

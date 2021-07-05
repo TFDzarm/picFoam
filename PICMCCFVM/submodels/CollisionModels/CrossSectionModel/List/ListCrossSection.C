@@ -23,7 +23,8 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "FixedValueCrossSection.H"
+#include "ListCrossSection.H"
+#include "interpolateXY.H"
 #include "constants.H"
 
 using namespace Foam::constant::mathematical;
@@ -31,7 +32,7 @@ using namespace Foam::constant::mathematical;
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 template<class CloudType, Foam::crossSectionType Type>
-Foam::FixedValueCrossSection<CloudType,Type>::FixedValueCrossSection
+Foam::ListCrossSection<CloudType,Type>::ListCrossSection
 (
     const dictionary& dict,
     CloudType& cloud,
@@ -44,7 +45,7 @@ Foam::FixedValueCrossSection<CloudType,Type>::FixedValueCrossSection
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
 template<class CloudType, Foam::crossSectionType Type>
-Foam::FixedValueCrossSection<CloudType,Type>::~FixedValueCrossSection()
+Foam::ListCrossSection<CloudType,Type>::~ListCrossSection()
 {}
 
 
@@ -52,7 +53,7 @@ Foam::FixedValueCrossSection<CloudType,Type>::~FixedValueCrossSection()
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 template<class CloudType>
-Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::ElectronElasticCS>::FixedValueCrossSection
+Foam::ListCrossSection<CloudType,Foam::crossSectionType::ElectronElasticCS>::ListCrossSection
 (
     const dictionary& dict,
     CloudType& cloud,
@@ -60,26 +61,28 @@ Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::ElectronElasticCS
 )
 :
     CrossSectionModel<CloudType,Foam::crossSectionType::ElectronElasticCS>(dict, cloud, "Elastic" + typeName ,associatedTypeId),
-    value_(readScalar(this->coeffDict().lookup("value")))
-{}
+    energies_(this->coeffDict().lookup("energies")),
+    values_(this->coeffDict().lookup("values"))
+{
+}
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
 template<class CloudType>
-Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::ElectronElasticCS>::~FixedValueCrossSection()
+Foam::ListCrossSection<CloudType,Foam::crossSectionType::ElectronElasticCS>::~ListCrossSection()
 {}
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 template<class CloudType>
-Foam::scalar Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::ElectronElasticCS>::crossSection(scalar eVEnergy) const
+Foam::scalar Foam::ListCrossSection<CloudType,Foam::crossSectionType::ElectronElasticCS>::crossSection(scalar eVEnergy) const
 {
-    return value_;
+    return interpolateXY(eVEnergy,energies_,values_);
 }
 
 template<class CloudType>
-Foam::scalar Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::ElectronElasticCS>::threshold() const
+Foam::scalar Foam::ListCrossSection<CloudType,Foam::crossSectionType::ElectronElasticCS>::threshold() const
 {
     return 0.0;
 }
@@ -90,15 +93,16 @@ Foam::scalar Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::Elec
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 template<class CloudType>
-Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::ElectronExciationCS>::FixedValueCrossSection
+Foam::ListCrossSection<CloudType,Foam::crossSectionType::ElectronExciationCS>::ListCrossSection
 (
     const dictionary& dict,
     CloudType& cloud,
     const label& associatedTypeId
 )
 :
-    CrossSectionModel<CloudType,Foam::crossSectionType::ElectronExciationCS>(dict, cloud, "Exciation" + typeName ,associatedTypeId),
-    value_(readScalar(this->coeffDict().lookup("value"))),
+    CrossSectionModel<CloudType,Foam::crossSectionType::ElectronExciationCS>(dict, cloud, "Excitation" + typeName ,associatedTypeId),
+    energies_(this->coeffDict().lookup("energies")),
+    values_(this->coeffDict().lookup("values")),
     threshold_(readScalar(this->coeffDict().lookup("threshold")))
 {}
 
@@ -106,19 +110,19 @@ Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::ElectronExciation
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
 template<class CloudType>
-Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::ElectronExciationCS>::~FixedValueCrossSection()
+Foam::ListCrossSection<CloudType,Foam::crossSectionType::ElectronExciationCS>::~ListCrossSection()
 {}
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 template<class CloudType>
-Foam::scalar Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::ElectronExciationCS>::crossSection(scalar eVEnergy) const
+Foam::scalar Foam::ListCrossSection<CloudType,Foam::crossSectionType::ElectronExciationCS>::crossSection(scalar eVEnergy) const
 {
-    return value_;
+    return interpolateXY(eVEnergy,energies_,values_);
 }
 
 template<class CloudType>
-Foam::scalar Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::ElectronExciationCS>::threshold() const
+Foam::scalar Foam::ListCrossSection<CloudType,Foam::crossSectionType::ElectronExciationCS>::threshold() const
 {
     return threshold_;
 }
@@ -128,7 +132,7 @@ Foam::scalar Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::Elec
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 template<class CloudType>
-Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::ElectronIonizationCS>::FixedValueCrossSection
+Foam::ListCrossSection<CloudType,Foam::crossSectionType::ElectronIonizationCS>::ListCrossSection
 (
     const dictionary& dict,
     CloudType& cloud,
@@ -136,7 +140,8 @@ Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::ElectronIonizatio
 )
 :
     CrossSectionModel<CloudType,Foam::crossSectionType::ElectronIonizationCS>(dict, cloud, "Ionization" + typeName ,associatedTypeId),
-    value_(readScalar(this->coeffDict().lookup("value"))),
+    energies_(this->coeffDict().lookup("energies")),
+    values_(this->coeffDict().lookup("values")),
     threshold_(readScalar(this->coeffDict().lookup("threshold")))
 {}
 
@@ -144,28 +149,30 @@ Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::ElectronIonizatio
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
 template<class CloudType>
-Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::ElectronIonizationCS>::~FixedValueCrossSection()
+Foam::ListCrossSection<CloudType,Foam::crossSectionType::ElectronIonizationCS>::~ListCrossSection()
 {}
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 template<class CloudType>
-Foam::scalar Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::ElectronIonizationCS>::crossSection(scalar eVEnergy) const
+Foam::scalar Foam::ListCrossSection<CloudType,Foam::crossSectionType::ElectronIonizationCS>::crossSection(scalar eVEnergy) const
 {
-    return value_;//return the fixed value
+    return interpolateXY(eVEnergy,energies_,values_);
 }
 
 template<class CloudType>
-Foam::scalar Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::ElectronIonizationCS>::threshold() const
+Foam::scalar Foam::ListCrossSection<CloudType,Foam::crossSectionType::ElectronIonizationCS>::threshold() const
 {
     return threshold_;
 }
+
+
 
 //Ion Elastic Specialization
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 template<class CloudType>
-Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::IonElasticCS>::FixedValueCrossSection
+Foam::ListCrossSection<CloudType,Foam::crossSectionType::IonElasticCS>::ListCrossSection
     (
         const dictionary& dict,
         CloudType& cloud,
@@ -173,26 +180,27 @@ Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::IonElasticCS>::Fi
         )
     :
     CrossSectionModel<CloudType,Foam::crossSectionType::IonElasticCS>(dict, cloud, "Elastic" + typeName ,associatedTypeId),
-    value_(readScalar(this->coeffDict().lookup("value")))
+    energies_(this->coeffDict().lookup("energies")),
+    values_(this->coeffDict().lookup("values"))
 {}
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
 template<class CloudType>
-Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::IonElasticCS>::~FixedValueCrossSection()
+Foam::ListCrossSection<CloudType,Foam::crossSectionType::IonElasticCS>::~ListCrossSection()
 {}
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 template<class CloudType>
-Foam::scalar Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::IonElasticCS>::crossSection(scalar eVEnergy) const
+Foam::scalar Foam::ListCrossSection<CloudType,Foam::crossSectionType::IonElasticCS>::crossSection(scalar eVEnergy) const
 {
-    return value_;
+    return interpolateXY(eVEnergy,energies_,values_);
 }
 
 template<class CloudType>
-Foam::scalar Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::IonElasticCS>::threshold() const
+Foam::scalar Foam::ListCrossSection<CloudType,Foam::crossSectionType::IonElasticCS>::threshold() const
 {
     return 0.0;
 }
@@ -204,7 +212,7 @@ Foam::scalar Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::IonE
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 template<class CloudType>
-Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::IonChargeExCS>::FixedValueCrossSection
+Foam::ListCrossSection<CloudType,Foam::crossSectionType::IonChargeExCS>::ListCrossSection
     (
         const dictionary& dict,
         CloudType& cloud,
@@ -212,7 +220,8 @@ Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::IonChargeExCS>::F
         )
     :
     CrossSectionModel<CloudType,Foam::crossSectionType::IonChargeExCS>(dict, cloud, "ChargeExchange" + typeName ,associatedTypeId),
-    value_(readScalar(this->coeffDict().lookup("value"))),
+    energies_(this->coeffDict().lookup("energies")),
+    values_(this->coeffDict().lookup("value")),
     threshold_(readScalar(this->coeffDict().lookup("threshold")))
 {}
 
@@ -220,21 +229,22 @@ Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::IonChargeExCS>::F
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
 template<class CloudType>
-Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::IonChargeExCS>::~FixedValueCrossSection()
+Foam::ListCrossSection<CloudType,Foam::crossSectionType::IonChargeExCS>::~ListCrossSection()
 {}
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 template<class CloudType>
-Foam::scalar Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::IonChargeExCS>::crossSection(scalar eVEnergy) const
+Foam::scalar Foam::ListCrossSection<CloudType,Foam::crossSectionType::IonChargeExCS>::crossSection(scalar eVEnergy) const
 {
-    return value_;
+    return interpolateXY(eVEnergy,energies_,values_);
 }
 
 template<class CloudType>
-Foam::scalar Foam::FixedValueCrossSection<CloudType,Foam::crossSectionType::IonChargeExCS>::threshold() const
+Foam::scalar Foam::ListCrossSection<CloudType,Foam::crossSectionType::IonChargeExCS>::threshold() const
 {
     return threshold_;
 }
+
 
 // ************************************************************************* //

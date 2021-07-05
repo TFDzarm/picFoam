@@ -90,6 +90,9 @@ template<class CloudType>
 class ElectronNeutralCollisionModel;
 
 template<class CloudType>
+class IonNeutralCollisionModel;
+
+template<class CloudType>
 class ChargeDistribution;
 
 template<class CloudType>
@@ -277,6 +280,10 @@ class PICCloud
             //- Electron - Neutral collision model
             autoPtr<ElectronNeutralCollisionModel<PICCloud<ParcelType>>>
                 electronNeutralCollisionModel_;
+
+            //- Ion - Neutral collision model
+            autoPtr<IonNeutralCollisionModel<PICCloud<ParcelType>>>
+                ionNeutralCollisionModel_;
 
             //- Background gas model
             autoPtr<BackgroundGasModel<PICCloud<ParcelType>>>
@@ -644,6 +651,14 @@ public:
                 //- Return non-const reference to binary elastic collision model
                 inline ElectronNeutralCollisionModel<PICCloud<ParcelType>>&
                     electronNeutralCollision();
+
+                //- Return reference to the ion-neutral collision model
+                inline const IonNeutralCollisionModel<PICCloud<ParcelType>>&
+                ionNeutralCollision() const;
+
+                //- Return non-const reference to the ion-neutral collision model
+                inline IonNeutralCollisionModel<PICCloud<ParcelType>>&
+                ionNeutralCollision();
 
                 //- Return non-const reference to BackgroundGasModel
                 inline BackgroundGasModel<PICCloud<ParcelType>>&

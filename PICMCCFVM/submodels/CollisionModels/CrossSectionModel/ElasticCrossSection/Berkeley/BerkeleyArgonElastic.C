@@ -30,6 +30,7 @@ using namespace Foam::constant::mathematical;
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
+// -------------------------- Electron-Neutral --------------------------
 template<class CloudType, Foam::crossSectionType Type>
 Foam::BerkeleyArgonElasticCS<CloudType,Type>::BerkeleyArgonElasticCS
 (
@@ -102,6 +103,43 @@ Foam::scalar Foam::BerkeleyArgonElasticCS<CloudType,Type>::crossSection(scalar e
 
 template<class CloudType, Foam::crossSectionType Type>
 Foam::scalar Foam::BerkeleyArgonElasticCS<CloudType,Type>::threshold() const
+{
+    return 0.0;
+}
+
+// ---------------------------- Ion-Neutral ----------------------------
+
+// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+
+template<class CloudType>
+Foam::BerkeleyArgonElasticCS<CloudType,crossSectionType::IonElasticCS>::BerkeleyArgonElasticCS
+(
+    const dictionary& dict,
+    CloudType& cloud,
+    const label& associatedTypeId
+)
+:
+    CrossSectionModel<CloudType,crossSectionType::IonElasticCS>(cloud, associatedTypeId)
+{}
+
+// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
+
+template<class CloudType>
+Foam::BerkeleyArgonElasticCS<CloudType,crossSectionType::IonElasticCS>::~BerkeleyArgonElasticCS()
+{}
+
+
+// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
+
+template<class CloudType>
+Foam::scalar Foam::BerkeleyArgonElasticCS<CloudType,crossSectionType::IonElasticCS>::crossSection(scalar eVEnergy) const
+{
+    if(eVEnergy > 4.0) return(1.8e-19 +4.0e-19/::sqrt(eVEnergy));
+        return(-2.0e-19*::sqrt(eVEnergy) +7.8e-19);
+}
+
+template<class CloudType>
+Foam::scalar Foam::BerkeleyArgonElasticCS<CloudType,crossSectionType::IonElasticCS>::threshold() const
 {
     return 0.0;
 }
