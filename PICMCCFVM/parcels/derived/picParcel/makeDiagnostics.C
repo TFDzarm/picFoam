@@ -33,6 +33,7 @@ License
 #include "IonizationInfo.H"
 #include "PrintParcelInfo.H"
 #include "DumpInfo.H"
+#include "VelocityInfo.H"
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
@@ -51,6 +52,7 @@ namespace Foam
     makeDiagnosticInfoType(IonizationInfo, CloudType);
     makeDiagnosticInfoType(PrintParcelInfo, CloudType);
     makeDiagnosticInfoType(DumpInfo, CloudType);
+    makeDiagnosticInfoType(VelocityInfo, CloudType);
 }
 
 // ************************************************************************* //

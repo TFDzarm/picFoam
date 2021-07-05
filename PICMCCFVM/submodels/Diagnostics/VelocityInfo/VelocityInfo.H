@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2018-2020 picFoam
+    \\  /    A nd           | Copyright (C) 2018-2021 picFoam
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -22,53 +22,56 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::MomentumInfo
+    Foam::VelocityInfo
 
 Description
-    Prints info on momentum for all species.
+    Calculates and prints info on the drift velocity.
 
 SourceFiles
-    MomentumInfo.C
+    VelocityInfo.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef MomentumInfo_H
-#define MomentumInfo_H
+#ifndef VelocityInfo_H
+#define VelocityInfo_H
 
 #include "DiagnosticInfo.H"
-
+#include "Switch.H"
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
 {
 
 /*---------------------------------------------------------------------------*\
-                     Class MomentumInfo Declaration
+                     Class VelocityInfo Declaration
 \*---------------------------------------------------------------------------*/
 
 template<class CloudType>
-class MomentumInfo :
+class VelocityInfo :
         public DiagnosticInfo<CloudType>
 {
-//Private data
+    //- Velocity <v>
+    List<vector> vDrift_;
 
-    //- Momentum of all species
-    List<vector> momentumofTypes_;
+    //- Number of particles for each species
+    List<scalar> nParticleTypes_;
 
-    //- Calculate relativisticly?
-    Switch       relativistic_;
+    //- v_perp
+    Switch calculateVperp_;
+    List<scalar> vperp_;
+
 public:
 
     //- Runtime type information
-    TypeName("Momentum");
+    TypeName("Velocity");
 
 
     // Constructors
 
-    MomentumInfo(const MomentumInfo<CloudType>& im);
+    VelocityInfo(const VelocityInfo<CloudType>& im);
 
     //- Construct from dictionary
-        MomentumInfo
+        VelocityInfo
         (
             const dictionary& dict,
             CloudType& cloud
@@ -76,14 +79,14 @@ public:
 
 
     //- Destructor
-    virtual ~MomentumInfo();
+    virtual ~VelocityInfo();
 
 
     virtual autoPtr<DiagnosticInfo<CloudType>> clone() const
     {
         return autoPtr<DiagnosticInfo<CloudType>>
         (
-            new MomentumInfo<CloudType>(*this)
+            new VelocityInfo<CloudType>(*this)
         );
     }
     // Member Functions
@@ -103,7 +106,7 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #ifdef NoRepository
-    #include "MomentumInfo.C"
+    #include "VelocityInfo.C"
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

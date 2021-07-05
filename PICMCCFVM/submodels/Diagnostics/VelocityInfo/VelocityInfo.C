@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2018-2020 picFoam
+    \\  /    A nd           | Copyright (C) 2018-2021 picFoam
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -23,107 +23,87 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "TemperatureInfo.H"
+#include "VelocityInfo.H"
 #include "constants.H"
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 template<class CloudType>
-Foam::TemperatureInfo<CloudType>::TemperatureInfo
+Foam::VelocityInfo<CloudType>::VelocityInfo
 (
     const dictionary& dict,
     CloudType& cloud
 )
 :
     DiagnosticInfo<CloudType>(dict,cloud,typeName),
-    vSqr_(cloud.typeIdList().size(),0.0),
     vDrift_(cloud.typeIdList().size(),Zero),
     nParticleTypes_(cloud.typeIdList().size(),0.0),
-    accountForDrift_(true)//default
+    calculateVperp_(false),
+    vperp_(cloud.typeIdList().size(),0.0)
 {
-    accountForDrift_.readIfPresent("accountForDrift",this->coeffDict());
-    if(accountForDrift_)
-        Info << "       |= Do not incorporate dirft velocities" << endl;
+    calculateVperp_.readIfPresent("calculate_vperp",this->coeffDict());
+    if(calculateVperp_)
+        Info << "       |= Calculate v_perp" << endl;
     else
-        Info << "       |= Incorporate the drift velocities in calculations" << endl;
+        Info << "       |= Do not calculate v_perp" << endl;
 }
 
 template<class CloudType>
-Foam::TemperatureInfo<CloudType>::TemperatureInfo(const TemperatureInfo<CloudType>& im)
+Foam::VelocityInfo<CloudType>::VelocityInfo(const VelocityInfo<CloudType>& im)
 :
     DiagnosticInfo<CloudType>(im.dict_, im.owner_, im.typeName),
-    vSqr_(im.vSqr_),
     vDrift_(im.vDrift_),
     nParticleTypes_(im.nParticleTypes_),
-    accountForDrift_(im.accountForDrift_)
+    calculateVperp_(im.calculateVperp_),
+    vperp_(im.vperp_)
 {}
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
 template<class CloudType>
-Foam::TemperatureInfo<CloudType>::~TemperatureInfo()
+Foam::VelocityInfo<CloudType>::~VelocityInfo()
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 template<class CloudType>
-void Foam::TemperatureInfo<CloudType>::gatherDiagnostic(const typename CloudType::parcelType& p)
+void Foam::VelocityInfo<CloudType>::gatherDiagnostic(const typename CloudType::parcelType& p)
 {
-    //Calculate all required properties
-    vSqr_[p.typeId()] += (p.U()& p.U())*p.nParticle();
+
     vDrift_[p.typeId()] += p.U()*p.nParticle();
     nParticleTypes_[p.typeId()] += p.nParticle();
+
+    if(calculateVperp_)
+        vperp_[p.typeId()] += p.nParticle()*(p.U().y()*p.U().y() + p.U().z()*p.U().z());
+
 }
 
 //- Print info
 template<class CloudType>
-void Foam::TemperatureInfo<CloudType>::info()
+void Foam::VelocityInfo<CloudType>::info()
 {
     const CloudType& cloud(this->owner());
-    
-    //Parallel COM the properties
-    Pstream::listCombineGather(vSqr_, plusEqOp<scalar>());
+
     Pstream::listCombineGather(vDrift_, plusEqOp<vector>());
     Pstream::listCombineGather(nParticleTypes_,plusEqOp<scalar>());
 
-    //Temperature of the system
-    scalar temperatureSys = 0.0;
-    scalar nMoles = sum(nParticleTypes_);
-    if(nMoles <= 0.0)
-        return;
+    if(calculateVperp_)
+        Pstream::listCombineGather(vperp_,plusEqOp<scalar>());
 
-    forAll(cloud.typeIdList(),id)
-    {
-        if(nParticleTypes_[id] <= 0.0)
-            continue;
-
-        scalar vDrift2 = 0;//default
-        if(accountForDrift_)
-            vDrift2 += (vDrift_[id]&vDrift_[id]);
-
-        temperatureSys += cloud.constProps(id).mass()*(vSqr_[id] - vDrift2/nParticleTypes_[id]);
-    }
-    temperatureSys /= 3.0*constant::physicoChemical::k.value()*nMoles;
-
-    //Average temperature over all species
-    Info << "    Average Temperature             = "
-         << temperatureSys << " K == " << temperatureSys*constant::physicoChemical::k.value()/constant::electromagnetic::e.value() << " eV" << nl;
-    
-    //Info on every species ... only includes drift if chosen   
+    Info << "    Drift Velocities" << nl;
     forAll(cloud.typeIdList(),id)
     {
         if(nParticleTypes_[id] > 0)
         {
             vector vDrift = vDrift_[id]/nParticleTypes_[id];
-            scalar vDrift2 = 0;//default
+            scalar vperp = vperp_[id]/nParticleTypes_[id];
 
-            if(accountForDrift_)//Do we add the drift velocity?
-                vDrift2 = (vDrift&vDrift);
+            Info << "    [" << cloud.typeIdList()[id] << "]                             = " << vDrift << " == |" << mag(vDrift) << "| m/s" << nl;
 
-            scalar temperatur = cloud.constProps(id).mass()/(3.0*constant::physicoChemical::k.value())*(vSqr_[id]/nParticleTypes_[id] - vDrift2);
-            Info << "    [" << cloud.typeIdList()[id] << "]                             = " << temperatur << " K == " << temperatur*constant::physicoChemical::k.value()/constant::electromagnetic::e.value() << " eV" << nl;
+            if(calculateVperp_)
+                Info << "v_perp: " << vperp << nl;
 
         }
     }
@@ -131,9 +111,10 @@ void Foam::TemperatureInfo<CloudType>::info()
    //Reset list
    forAll(cloud.typeIdList(),i)
    {
-       vSqr_[i] = 0.0;
        vDrift_[i] = Zero;
        nParticleTypes_[i] = 0.0;
+
+       vperp_[i] = 0.0;
    }
 }
 

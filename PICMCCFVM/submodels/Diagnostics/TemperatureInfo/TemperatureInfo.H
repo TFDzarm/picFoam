@@ -61,9 +61,6 @@ class TemperatureInfo :
 
     //- Include drift velocity in calculation?
     Switch accountForDrift_;
-
-    //- Total number of particles
-    scalar nMoles_;
 public:
 
     //- Runtime type information

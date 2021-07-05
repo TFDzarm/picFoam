@@ -50,7 +50,11 @@ template<class CloudType>
 class KineticEnergyInfo :
         public DiagnosticInfo<CloudType>
 {
+
+    //- KineticEnergy of types
     List<scalar> kineticEnergyofTypes_;
+
+    //- Calculate relativisticly?
     Switch relativistic_;
 public:
 

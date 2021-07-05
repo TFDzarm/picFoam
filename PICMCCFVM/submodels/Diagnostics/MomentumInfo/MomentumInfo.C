@@ -36,14 +36,23 @@ Foam::MomentumInfo<CloudType>::MomentumInfo
 )
 :
     DiagnosticInfo<CloudType>(dict,cloud,typeName),
-    momentumofTypes_(cloud.typeIdList().size(),Zero)
-{}
+    momentumofTypes_(cloud.typeIdList().size(),Zero),
+    relativistic_(false)
+{
+    relativistic_.readIfPresent("relativistic",this->coeffDict());
+
+    if(relativistic_)
+        Info << "       |= Calculated relativistically" << endl;
+    else
+        Info << "       |= Calculated classical" << endl;
+}
 
 template<class CloudType>
 Foam::MomentumInfo<CloudType>::MomentumInfo(const MomentumInfo<CloudType>& im)
 :
     DiagnosticInfo<CloudType>(im.dict_, im.owner_, im.typeName),
-    momentumofTypes_(im.momentumofTypes_)
+    momentumofTypes_(im.momentumofTypes_),
+    relativistic_(im.relativistic_)
 {}
 
 
@@ -62,7 +71,13 @@ void Foam::MomentumInfo<CloudType>::gatherDiagnostic(const typename CloudType::p
     const CloudType& cloud(this->owner());
     const typename CloudType::parcelType::constantProperties& cP = cloud.constProps(p.typeId());
 
-    momentumofTypes_[p.typeId()] += cP.mass()*p.U()*p.nParticle();//Momentum of the sepcies
+    vector mom = cP.mass()*p.U()*p.nParticle();//Momentum of the sepcies
+
+    if(relativistic_) {
+        scalar gamma = 1.0/sqrt(1.0-sqr(mag(p.U())/constant::universal::c.value()));
+        mom *= gamma;
+    }
+    momentumofTypes_[p.typeId()] += mom;
 }
 
 //- Print info
@@ -74,18 +89,20 @@ void Foam::MomentumInfo<CloudType>::info()
     //Parallel COM momentum
     Pstream::listCombineGather(momentumofTypes_, plusEqOp<vector>());
     //Calculate total momentum
-    vector linearMomentum = sum(momentumofTypes_);
-
+    vector momentumOfSystem = sum(momentumofTypes_);
 
     //Print the info
     Info << "   |Total linear momentum|          = "
-         << mag(linearMomentum) << nl;
+         << mag(momentumOfSystem) << nl
+         << "    Total momentum                  = "
+         << momentumOfSystem << nl;
 
    forAll(cloud.typeIdList(),id)
    {
        vector momentum = momentumofTypes_[id];
        Info<< "    [" << cloud.typeIdList()[id] << "]" << "                             = "
-           << mag(momentum) << " Ns" << nl;
+           << mag(momentum) << " Ns" << nl
+           << "                                    = " << momentum << nl;
    }
 
    //Reset list
