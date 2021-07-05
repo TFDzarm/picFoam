@@ -124,6 +124,7 @@ CollisionModels
     
     BinaryCollisionModel            none;
     CoulombCollisionModel           none;
+    IonNeutralCollisionModel        none;
 
     //Electron-Neutal collision model
     ElectronNeutralCollisionModel   RelativisticElectronNeutral;

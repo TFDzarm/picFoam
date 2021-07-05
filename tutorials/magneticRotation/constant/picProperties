@@ -108,6 +108,7 @@ CollisionModels
     ElectronNeutralCollisionModel   none;
     BinaryCollisionModel            none;
     CoulombCollisionModel           none;
+    IonNeutralCollisionModel        none;
 }
 
 // ParticleMerging

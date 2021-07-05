@@ -113,6 +113,7 @@ CollisionModels
 {
     BackgroundGasModel              none;
     ElectronNeutralCollisionModel   none;
+    IonNeutralCollisionModel        none;
 
     BinaryCollisionModel            IsotropicScattering;//Binary collision model
     IsotropicScatteringCoeffs

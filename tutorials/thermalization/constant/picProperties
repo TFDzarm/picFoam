@@ -109,6 +109,7 @@ CollisionModels
     BackgroundGasModel              none;
     ElectronNeutralCollisionModel   none;
     BinaryCollisionModel            none;
+    IonNeutralCollisionModel        none;
 
     CoulombCollisionModel           Perez;
     CoulombCollisionCoeffs
