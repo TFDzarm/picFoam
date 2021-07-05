@@ -207,11 +207,12 @@ int main(int argc, char *argv[])
     {
         Info << "Initializing collision models using" << nl
              << "    number density: " << (initializationModel->calculateNumberDensities() ? "calculated" : "default") << nl
-             << "    temperature: " << (initializationModel->calculateTemperatures() ? "calculated" : "default") << endl;
+             << "    temperature: " << (initializationModel->calculateTemperatures() ? "calculated" : "default") << nl;
 
         pic.binaryCollision().initialize(initializationModel->temperatures(),initializationModel->numberDensities());
         pic.electronNeutralCollision().initialize(initializationModel->temperatures(),initializationModel->numberDensities());
     }
+    Info << endl;
 
     //Calculating fields
     pic.calculateFields();

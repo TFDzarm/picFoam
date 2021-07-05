@@ -36,6 +36,12 @@ inline const bool& Foam::ElectronNeutralCollisionModel<CloudType>::updateNeutral
 }
 
 template<class CloudType>
+inline const bool& Foam::ElectronNeutralCollisionModel<CloudType>::createIonElectronPair() const
+{
+    return createIonElectronPair_;
+}
+
+template<class CloudType>
 inline const CrossSectionList<CloudType,Foam::crossSectionType::ElectronElasticCS>&
     Foam::ElectronNeutralCollisionModel<CloudType>::elasticCrossSections() const
 {

@@ -81,20 +81,17 @@ class ElectronNeutralCollisionModel
         scalar ionizationNEquivalentParticles_;
 
         //- Maximum total cross section *cR for background gas collisions
-        scalar backgroundSigmaTcRMax_;
-
-        //- Collision Probability based on backgroundSigmaTcRMax_
-        scalarField backgroundCollisionProp_;
+        volScalarField backgroundSigmaTcRMax_;
 
         //-  Remainder for parcel selection (background)
         volScalarField::Internal backgroundCollisionRemainder_;
 
 
-        //- Maximum total cross section *cR
-        volScalarField sigmaTcRMax_;
+        //- Maximum total cross section *cR per neutral species
+        PtrList<volScalarField> sigmaTcRMax_;
 
-        //-  Remainder for parcel selection FIXME: only works for one neutral species
-        volScalarField::Internal collisionRemainder_;
+        //-  Remainder for parcel selection per neutral species
+        PtrList<volScalarField::Internal> collisionRemainder_;
 
         //- Pointer to WeightCorrection model, used for unequal parcel weight
         autoPtr<WeightCorrectionModel<CloudType>>
@@ -110,6 +107,9 @@ class ElectronNeutralCollisionModel
         volScalarField elasticCollisions_;
         volScalarField excitationCollisions_;
         volScalarField ionizationCollisions_;
+
+        //- Do we create the new ion-electron pair during ionization? (def: true)
+        bool createIonElectronPair_;
 public:
 
     //- Runtime type information
@@ -172,8 +172,11 @@ public:
         //- Return whether to delete neutrals after ionization or not
         inline const bool& deleteNeutrals() const;
 
-        //- Return wheter to update the neutrals velocity during collision or not
+        //- Return whether to update the neutrals velocity during collision or not
         inline const bool& updateNeutralVelocity() const;
+
+        //- Return whether to create the new ion-electron pair or not
+        inline const bool& createIonElectronPair() const;
 
         //- Return PointerList of elastic cross section models
         inline const CrossSectionList<CloudType,crossSectionType::ElectronElasticCS>&
@@ -194,12 +197,15 @@ public:
 
         //- Handle excitation collision event
         void excitationCollision(scalar eV, scalar threshold, typename CloudType::parcelType* pE, typename CloudType::parcelType* pN);
+        void excitationCollision(scalar eV, scalar threshold, typename CloudType::parcelType* pE, vector& Un);
 
         //- Handle ionization collision event
         bool ionizationCollision(scalar eV, scalar threshold, typename CloudType::parcelType* pE, typename CloudType::parcelType* pN);
+        bool ionizationCollision(scalar eV, scalar threshold, typename CloudType::parcelType* pE, vector& Un);
 
         //- Handle elastic collision event
         void elasticCollision(scalar eV, typename CloudType::parcelType* pE, typename CloudType::parcelType* pN);
+        void elasticCollision(scalar eV, typename CloudType::parcelType* pE, vector& Un);
 
         //- Update the velocities during collisions with the selected model
         virtual void updateVelocity(scalar eV, typename CloudType::parcelType& pE, typename CloudType::parcelType& pN) = 0;

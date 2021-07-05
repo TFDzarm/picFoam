@@ -234,6 +234,9 @@ class PICCloud
         //Do we run the picFoam or picInitialize?
         bool isInitializing_;
 
+        //picInitialiseDict, null if not initialising
+        dictionary picInitialiseDict_;
+
         //- Parcel constant properties - one for each type
         List<typename ParcelType::constantProperties> constProps_;
 
@@ -709,6 +712,10 @@ public:
             void setModels();
 
             inline const bool& isInitializing() const;
+
+            inline dictionary& picInitialiseDict();
+
+            inline const dictionary& picInitialiseDict() const;
 
         // Cloud evolution functions
 

@@ -671,6 +671,20 @@ Foam::PICCloud<ParcelType>::isInitializing() const
 }
 
 template<class ParcelType>
+inline Foam::dictionary&
+Foam::PICCloud<ParcelType>::picInitialiseDict()
+{
+    return picInitialiseDict_;
+}
+
+template<class ParcelType>
+inline const Foam::dictionary&
+Foam::PICCloud<ParcelType>::picInitialiseDict() const
+{
+    return picInitialiseDict_;
+}
+
+template<class ParcelType>
 inline Foam::volScalarField&
 Foam::PICCloud<ParcelType>::elpotentialField()
 {

@@ -899,6 +899,7 @@ Foam::PICCloud<ParcelType>::PICCloud
     checkPlasmaFrequency_(readBool(particleProperties_.subDict("SolverSettings").lookup("checkPlasmaFrequency"))),
     warnCellTrajectory_(readScalar(particleProperties_.subDict("SolverSettings").lookup("warnCellTrajectory"))),
     isInitializing_(false),
+    picInitialiseDict_(dictionary::null),
     constProps_(),
     rndGen_(label(149382906) + 7183*Pstream::myProcNo()),
     T_(
@@ -1192,6 +1193,7 @@ Foam::PICCloud<ParcelType>::PICCloud
     checkPlasmaFrequency_(readBool(particleProperties_.subDict("SolverSettings").lookup("checkPlasmaFrequency"))),
     warnCellTrajectory_(readScalar(particleProperties_.subDict("SolverSettings").lookup("warnCellTrajectory"))),
     isInitializing_(true),
+    picInitialiseDict_(picInitialiseDict),
     constProps_(),
     rndGen_(label(971501) + 1526*Pstream::myProcNo()),
     T_
