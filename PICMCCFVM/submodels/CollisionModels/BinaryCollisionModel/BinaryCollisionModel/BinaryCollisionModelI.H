@@ -30,21 +30,8 @@ inline Foam::volScalarField& Foam::BinaryCollisionModel<CloudType>::sigmaTcRMax(
 }
 
 template<class CloudType>
-inline Foam::volScalarField& Foam::BinaryCollisionModel<CloudType>::sigmaTIoncRMax()
-{
-    return sigmaTIoncRMax_;
-}
-
-template<class CloudType>
 inline Foam::scalarField&
 Foam::BinaryCollisionModel<CloudType>::collisionSelectionRemainder()
 {
     return collisionSelectionRemainder_;
-}
-
-template<class CloudType>
-inline Foam::scalarField&
-Foam::BinaryCollisionModel<CloudType>::collisionSelectionIonRemainder()
-{
-    return collisionSelectionIonRemainder_;
 }

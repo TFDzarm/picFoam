@@ -37,29 +37,18 @@ Foam::BinaryCollisionModel<CloudType>::BinaryCollisionModel(CloudType& owner)
     dict_(dictionary::null),
     owner_(owner),
     coeffDict_(dictionary::null),
-    sigmaTcRMax_//Read the field from the time dir
+    sigmaTcRMax_
     (
         IOobject
         (
             "picSigmaTcRMax",
             owner.mesh().time().timeName(),
             owner.mesh(),
-            IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
         ),
-        owner.mesh()
-    ),
-    sigmaTIoncRMax_//Read the field from the time dir
-    (
-        IOobject
-        (
-            "picSigmaTcRMax_IonNeutral",
-            owner.mesh().time().timeName(),
-            owner.mesh(),
-            IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
-        ),
-        owner.mesh()
+        owner.mesh(),
+        dimensionedScalar("zero",  dimensionSet(0,3,-1,0,0,0,0), 0.0)
     ),
     collisionSelectionRemainder_
     (
@@ -72,64 +61,19 @@ Foam::BinaryCollisionModel<CloudType>::BinaryCollisionModel(CloudType& owner)
         owner.mesh(),
         dimensionedScalar("collisionSelectionRemainder", dimless, 0)
     ),
-    collisionSelectionIonRemainder_
-    (
-        IOobject
-        (
-            "pic:collisionSelectionIonRemainder",
-            owner.mesh().time().timeName(),
-            owner.mesh()
-        ),
-        owner.mesh(),
-        dimensionedScalar("collisionSelectionIonRemainder", dimless, 0)
-    ),
     totalCrossSection_(),
-    backgroundCollisionPropIon_
+    backgroundCSR_
     (
         IOobject
         (
-            "backgroundCollisionProp_IonNeutral",
+            "backgroundCollisionRemainder_NeutralNeutral",
              owner.mesh().time().timeName(),
              owner.mesh()
         ),
         owner.mesh(),
-        dimensionedScalar("backgroundCollisionProp_IonNeutral", dimless, 0)
+        dimensionedScalar("backgroundCollisionRemainder_NeutralNeutral", dimless, 0)
     ),
-    backgroundCSRIon_
-    (
-        IOobject
-        (
-            "backgroundCollisionRemainder_IonnNeutral",
-             owner.mesh().time().timeName(),
-             owner.mesh()
-        ),
-        owner.mesh(),
-        dimensionedScalar("backgroundCollisionRemainder_IonNeutral", dimless, 0)
-   ),
-   backgroundCollisionProp_
-   (
-       IOobject
-       (
-           "backgroundCollisionProp_NeutralNeutral",
-            owner.mesh().time().timeName(),
-            owner.mesh()
-       ),
-       owner.mesh(),
-       dimensionedScalar("backgroundCollisionProp_NeutralNeutral", dimless, 0)
-   ),
-   backgroundCSR_
-   (
-       IOobject
-       (
-           "backgroundCollisionRemainder_NeutralNeutral",
-            owner.mesh().time().timeName(),
-            owner.mesh()
-       ),
-       owner.mesh(),
-       dimensionedScalar("backgroundCollisionRemainder_NeutralNeutral", dimless, 0)
-   ),
-   weightCorrection_(),
-   chargeExchangeCollision_(false)
+    weightCorrection_()
 {}
 
 
@@ -151,19 +95,7 @@ Foam::BinaryCollisionModel<CloudType>::BinaryCollisionModel
             "picSigmaTcRMax",
             owner.mesh().time().timeName(),
             owner.mesh(),
-            IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
-        ),
-        owner.mesh()
-    ),
-    sigmaTIoncRMax_//Read the field from the time dir
-    (
-        IOobject
-        (
-            "picSigmaTcRMax_IonNeutral",
-            owner.mesh().time().timeName(),
-            owner.mesh(),
-            IOobject::MUST_READ,
+            IOobject::READ_IF_PRESENT,
             IOobject::AUTO_WRITE
         ),
         owner.mesh()
@@ -179,17 +111,6 @@ Foam::BinaryCollisionModel<CloudType>::BinaryCollisionModel
         owner.mesh(),
         dimensionedScalar("collisionSelectionRemainder", dimless, 0)
     ),
-    collisionSelectionIonRemainder_
-    (
-        IOobject
-        (
-            "pic:collisionSelectionIonRemainder",
-            owner.mesh().time().timeName(),
-            owner.mesh()
-        ),
-        owner.mesh(),
-        dimensionedScalar("collisionSelectionIonRemainder", dimless, 0)
-    ),
     totalCrossSection_//Construct the model
     (
         TotalCrossSectionModel<CloudType>::New
@@ -198,39 +119,6 @@ Foam::BinaryCollisionModel<CloudType>::BinaryCollisionModel
             owner
         )
     ),
-    backgroundCollisionPropIon_
-    (
-        IOobject
-        (
-            "backgroundCollisionProp_IonNeutral",
-             owner.mesh().time().timeName(),
-             owner.mesh()
-        ),
-        owner.mesh(),
-        dimensionedScalar("backgroundCollisionProp_IonNeutral", dimless, 0)
-    ),
-    backgroundCSRIon_
-    (
-        IOobject
-        (
-            "backgroundCollisionRemainder_IonnNeutral",
-             owner.mesh().time().timeName(),
-             owner.mesh()
-        ),
-        owner.mesh(),
-        dimensionedScalar("backgroundCollisionRemainder_IonNeutral", dimless, 0)
-   ),
-   backgroundCollisionProp_
-   (
-       IOobject
-       (
-           "backgroundCollisionProp_NeutralNeutral",
-            owner.mesh().time().timeName(),
-            owner.mesh()
-       ),
-       owner.mesh(),
-       dimensionedScalar("backgroundCollisionProp_NeutralNeutral", dimless, 0)
-   ),
    backgroundCSR_
    (
        IOobject
@@ -248,50 +136,23 @@ Foam::BinaryCollisionModel<CloudType>::BinaryCollisionModel
            coeffDict_,
            owner
        )
-   ),
-   chargeExchangeCollision_(readBool(this->coeffDict().lookup("handleChargeExchange")))//Do we use the simple model descriped by Nanbu?
+   )
 {
-    if(chargeExchangeCollision_ && !isA<HardSphere<CloudType>>(totalCrossSection_()))
-    {
-        FatalErrorInFunction << "Charge exchange can only be used in combination with the HardSphere cross section model." << abort(FatalError);
-    }
-    if(chargeExchangeCollision_ && owner.neutralSpecies().size() > 1)
-    {
-        FatalErrorInFunction << "Charge exchange is only valid for one neutral and its ion species." << abort(FatalError);
-    }
-
     const BackgroundGasModel<CloudType>& backgroundGas(owner.backgroundGas());
-    if(backgroundGas.active())//If we use a background gas model calculate the collision probability
+    if(backgroundGas.active())
     {
         label bgTypeId = backgroundGas.species();
-        const scalarField& bgNumberDensity = backgroundGas.numberDensity();
-
-        scalar dt = owner.mesh().time().deltaTValue();
-
-        //Use sigmaTIoncRMax_ as inital value
-        forAll(backgroundCollisionPropIon_,i)
-            backgroundCollisionPropIon_[i] = 1.0 -::exp(-sigmaTIoncRMax_[i]*bgNumberDensity[i]*dt);
-
-        //Use sigmaTcRMax_ as inital value
-        forAll(backgroundCollisionProp_,i)
-            backgroundCollisionProp_[i] = 1.0 -::exp(-sigmaTcRMax_[i]*bgNumberDensity[i]*dt);
+        const scalarField& bgNumberDensity(backgroundGas.numberDensity());
 
         Info << "|->    BackgroundGasModel " << backgroundGas.type() << " neutral collision properties:" << nl
              << "|          species: " << owner.typeIdList()[bgTypeId] << nl
-             << "|          avg number density: " << average(bgNumberDensity) << " m^-3" << nl
-             << "|          avg temperature: " << average(backgroundGas.temperature()) << " K" << nl
-             << "|          avg sigmaTcRmax: " << average(sigmaTcRMax_.primitiveField()) << nl
-             << "|          avg collision Pmax: " << average(backgroundCollisionProp_.field()) << nl
-
-             << "|->    BackgroundGasModel " << backgroundGas.type() << " ion collision properties:" << nl
-             << "           avg sigmaTcRmax: " << average(sigmaTIoncRMax_.primitiveField()) << nl
-             << "           avg collision Pmax: " << average(backgroundCollisionPropIon_.field()) << nl << endl;
+             << "|          avg number density: " << gAverage(bgNumberDensity) << " m^-3" << nl
+             << "|          avg temperature: " << gAverage(backgroundGas.temperature()) << " K" << nl
+             << "|          sigmaTcRmax: " << gMax(sigmaTcRMax_.primitiveField()) << nl << endl;
     }
     forAll(collisionSelectionRemainder_, i)//Initialize the remainders to a random value
     {
         collisionSelectionRemainder_[i] = owner.rndGen().scalar01();
-        collisionSelectionIonRemainder_[i] = owner.rndGen().scalar01();
-        backgroundCSRIon_[i] = owner.rndGen().scalar01();
         backgroundCSR_[i] = owner.rndGen().scalar01();
     }
 }
@@ -338,38 +199,6 @@ Foam::BinaryCollisionModel<CloudType>::coeffDict() const
 }
 
 /*
-Foam::BinaryCollisionModel<CloudType>::chargeExchangeCollision
-
-Perform a charge exchange, use a simple correction method of Particle is different.
-*/
-template<class CloudType>
-void Foam::BinaryCollisionModel<CloudType>::chargeExchangeCollision(typename CloudType::parcelType* pP, typename CloudType::parcelType* pQ)
-{
-    scalar rndU = this->owner().rndGen().scalar01();
-
-    //Identity Switch
-    vector tmpP = pP->U();
-    if(rndU <= pQ->nParticle()/pP->nParticle())
-        pP->U() = pQ->U();
-
-    if(rndU <= pP->nParticle()/pQ->nParticle())
-        pQ->U() = tmpP;
-}
-
-/*
-Foam::BinaryCollisionModel<CloudType>::chargeExchangeCollision
-
-Charge exchange collision with the background
-*/
-template<class CloudType>
-void Foam::BinaryCollisionModel<CloudType>::chargeExchangeCollision(typename CloudType::parcelType* pP, vector& Uq, label idQ)
-{
-    vector tmpP = pP->U();
-    pP->U() = Uq;
-    Uq = tmpP;
-}
-
-/*
 Foam::BinaryCollisionModel<CloudType>::elasticCollision
 
 Elastic collision with the background. Update the velocity by calling the chosen model.
@@ -407,7 +236,6 @@ void Foam::BinaryCollisionModel<CloudType>::performCollisions()
     const List<List<DynamicList<typename CloudType::parcelType*>>>& sortedCellOccupancy(cloud.sortedCellOccupancy());
 
     const List<label>& neutralSpecies(cloud.neutralSpecies());
-    const List<label>& chargedSpecies(cloud.chargedSpecies());
     scalar deltaT = mesh.time().deltaTValue();
 
     // Temporary storage for subCells
@@ -417,21 +245,14 @@ void Foam::BinaryCollisionModel<CloudType>::performCollisions()
     label collisionCandidates = 0;
     label collisions = 0;
 
-    label ionCollisionCandidates = 0;
-    label ionCollisions = 0;
-
-    label chargeExchanges = 0;
 
     DynamicList<typename CloudType::parcelType*> collisionList;//Lists of particles that can collide
-    DynamicList<typename CloudType::parcelType*> ionCollisionList;
 
     forAll(sortedCellOccupancy, celli)// Go through all cells, add particles and look for the highest nParticle
     {
-        label nC(0), iC(0);
+        label nC(0);
         collisionList.clear();
-        ionCollisionList.clear();
         scalar nParticleNeutralMax = 0.0;
-        scalar nParticleIonNeutalMax = 0.0;
         forAll(neutralSpecies,i)//Species 1
         {
             const DynamicList<typename CloudType::parcelType*>& cellParcels(sortedCellOccupancy[celli][neutralSpecies[i]]);
@@ -445,26 +266,9 @@ void Foam::BinaryCollisionModel<CloudType>::performCollisions()
             }
 
         }
-        nParticleIonNeutalMax = nParticleNeutralMax;//If there is no higher weight for the ions use the one for the neutrals
-        forAll(chargedSpecies,i)//Species 1
-        {
-            if(chargedSpecies[i] == cloud.electronTypeId())
-                continue;
-
-            const DynamicList<typename CloudType::parcelType*>& cellParcels(sortedCellOccupancy[celli][chargedSpecies[i]]);
-            forAll(cellParcels,i) {
-                typename CloudType::parcelType* p = cellParcels[i];
-                ionCollisionList.append(p);
-
-                scalar nParticle = p->nParticle();
-                if(nParticle > nParticleIonNeutalMax)
-                    nParticleIonNeutalMax = nParticle;
-            }
-        }
 
         //Number of particles
         nC = collisionList.size();
-        iC = ionCollisionList.size();
 
         // -------------------------------------------------------------------------------//
         //                              Neutral - Neutral                                 //
@@ -597,91 +401,13 @@ void Foam::BinaryCollisionModel<CloudType>::performCollisions()
              }
 
         }
-        // -------------------------------------------------------------------------------//
-        //                                  Ion - Neutral                                 //
-        // -------------------------------------------------------------------------------//
-        if(nC > 0 && iC > 0)
-        {
-            scalar sigmaTcRMax = sigmaTIoncRMax_[celli];
-
-            //Calculate number of possible pairs
-            scalar selectedPairs =
-                    collisionSelectionIonRemainder_[celli]
-                    + nC*iC*nParticleIonNeutalMax*sigmaTcRMax*deltaT
-                    /mesh.cellVolumes()[celli];
-
-            label nCandidates(selectedPairs);
-            collisionSelectionIonRemainder_[celli] = selectedPairs - nCandidates;
-            ionCollisionCandidates += nCandidates;
-
-            for (label c = 0; c < nCandidates; c++)
-            {
-
-                //Pick random canidates
-                label candidateP = rndGen.sampleAB<label>(0, nC);
-                label candidateQ = rndGen.sampleAB<label>(0, iC);
-
-                typename CloudType::parcelType* parcelP = collisionList[candidateP];
-                typename CloudType::parcelType* parcelQ = ionCollisionList[candidateQ];
-
-                scalar sTcR = totalCrossSection_->sigmaTcR
-                (
-                     *parcelP,
-                     *parcelQ
-                );
-
-                // Update the maximum value of sigmaTcR stored, but use the
-                // initial value in the acceptance-rejection criteria because
-                // the number of collision candidates selected was based on this
-
-                if (sTcR > sigmaTIoncRMax_[celli])
-                {
-                    sigmaTIoncRMax_[celli] = sTcR;
-                }
-                scalar QeCR = sTcR;
-                scalar QexcCR = 0.0;
-
-                //Nanbu 0.5 sigmaT is the charge exchange cross section: https://doi.org/10.1109/27.887765
-                if(chargeExchangeCollision_) {
-                    QeCR *= 0.5;
-                    QexcCR = QeCR;
-                }
-
-                scalar rndU = rndGen.scalar01();
-                if((QeCR/sigmaTcRMax) > rndU)//Elastic collision
-                {
-                    elasticCollision
-                    (
-                        parcelP,
-                        parcelQ
-                    );
-                    ionCollisions++;
-                }
-                else if((QeCR+QexcCR)/sigmaTcRMax > rndU)//Charge exchange collision
-                {
-                    chargeExchangeCollision
-                    (
-                        parcelP,
-                        parcelQ
-                    );
-                    chargeExchanges++;
-                    ionCollisions++;
-                }
-            }
-        }
     }
     //Parallel COM number of events
-    reduce(chargeExchanges,sumOp<label>());
     reduce(collisions, sumOp<label>());
 
     reduce(collisionCandidates, sumOp<label>());
 
-    reduce(ionCollisions, sumOp<label>());
-
-    reduce(ionCollisionCandidates, sumOp<label>());
-
     sigmaTcRMax_.correctBoundaryConditions();
-    sigmaTIoncRMax_.correctBoundaryConditions();
 
     //Print some info
     if (collisionCandidates)
@@ -696,23 +422,6 @@ void Foam::BinaryCollisionModel<CloudType>::performCollisions()
     {
         Info<< "    No collisions between neutral species" << nl << endl;
     }
-
-    if (ionCollisionCandidates)
-    {
-        Info<< "    Collisions between ion/neutral species = "
-                << ionCollisions << nl
-                << "    Elastic                                = "
-                << ionCollisions-chargeExchanges << nl
-                << "    Charge exchange                        = "
-                << chargeExchanges << nl
-                << "    Acceptance rate                        = "
-                << scalar(ionCollisions)/scalar(ionCollisionCandidates) << nl
-                << nl << endl;
-    }
-    else
-    {
-        Info<< "    No collisions between ion/neutral species" << nl << endl;
-    }
 }
 template<class CloudType>
 void Foam::BinaryCollisionModel<CloudType>::performBackgroundCollisions()
@@ -725,33 +434,23 @@ void Foam::BinaryCollisionModel<CloudType>::performBackgroundCollisions()
     const List<List<DynamicList<typename CloudType::parcelType*>>>& sortedCellOccupancy(cloud.sortedCellOccupancy());
 
     const List<label>& neutralSpecies(cloud.neutralSpecies());
-    const List<label>& ionSpecies(cloud.ionSpecies());
     scalar dt = mesh.time().deltaTValue();
 
 
     DynamicList<typename CloudType::parcelType*> collisionList;
-    DynamicList<typename CloudType::parcelType*> ionCollisionList;
 
     BackgroundGasModel<CloudType>& backgroundGas(cloud.backgroundGas());
 
     //Used for counting events
-    label collisionsIon = 0;
     label collisionsNeutral = 0;
-    label collisionCandidatesIon = 0;
     label collisionCandidatesNeutral = 0;
-    label chargeExchanges = 0;
 
-    //update background (can have changed) FIXME: use update flag?
-    tmp<scalarField> tbgNumberDensity = backgroundGas.numberDensity();
-    backgroundCollisionPropIon_.field() = 1.0 -exp(-sigmaTIoncRMax_*tbgNumberDensity*dt);
-    backgroundCollisionProp_.field() = 1.0 -exp(-sigmaTcRMax_*tbgNumberDensity*dt);
+    const scalarField& bgNumberDensity(backgroundGas.numberDensity());
 
     forAll(sortedCellOccupancy, celli)// Go through all cells and add the particles to the collision lists
     {
         label nN = 0;
-        label nI = 0;
         collisionList.clear();
-        ionCollisionList.clear();
 
         forAll(neutralSpecies,i)
         {
@@ -765,26 +464,15 @@ void Foam::BinaryCollisionModel<CloudType>::performBackgroundCollisions()
                 nN++;
             }
         }
-        forAll(ionSpecies,i)
-        {
-            label typeId = ionSpecies[i];
-            const DynamicList<typename CloudType::parcelType*>& cellParcels(sortedCellOccupancy[celli][typeId]);
-            forAll(cellParcels,j)
-            {
-                typename CloudType::parcelType* p = cellParcels[j];
-                ionCollisionList.append(p);
-                nI++;
-            }
-        }
 
         //Collision of neutrals with the background
+        scalar sigmaTcRMax = sigmaTcRMax_[celli];
         if(nN > 0)
         {
-            scalar collisions = backgroundCollisionProp_[celli]*nN+backgroundCSR_[celli];//Calculate number of collisions
+            scalar collisions = backgroundCSR_[celli] + nN*bgNumberDensity[celli]*sigmaTcRMax*dt;//Calculate number of collisions
             label nCandidates(collisions);
             backgroundCSR_[celli] = collisions-nCandidates;
             collisionCandidatesNeutral += nCandidates;
-            scalar sigmaTcRMax = sigmaTcRMax_[celli];
 
             for (label i = 0; i < nCandidates; i++)
             {
@@ -806,7 +494,6 @@ void Foam::BinaryCollisionModel<CloudType>::performBackgroundCollisions()
                 if (sTcR > sigmaTcRMax_[celli])
                 {
                     sigmaTcRMax_[celli] = sTcR;
-                    backgroundCollisionProp_[celli] = 1.0 -::exp(-sTcR*backgroundGas.numberDensity().operator ()()[celli]*dt);
                 }
 
                 if ((sTcR/sigmaTcRMax) > rndGen.scalar01())
@@ -823,85 +510,12 @@ void Foam::BinaryCollisionModel<CloudType>::performBackgroundCollisions()
             }
 
         }
-        if(nI > 0)//Collisions of ions with the background
-        {
-            scalar collisions = backgroundCollisionPropIon_[celli]*nI+backgroundCSRIon_[celli];//Number of collisions
-            label nCandidates(collisions);
-            collisionCandidatesIon += nCandidates;
-            backgroundCSRIon_[celli] = collisions-nCandidates;
-
-            scalar sigmaTcRMax = sigmaTIoncRMax_[celli];
-
-            for (label i = 0; i < nCandidates; i++)
-            {
-                //Pick random collision partners
-                label candidate = rndGen.sampleAB<label>(0, nI);//FIXME: candidate should only be selected ONCE !!!!!
-                typename CloudType::parcelType* parcel = ionCollisionList[candidate];
-
-                vector U = backgroundGas.sampleVelocity(celli);
-                vector preU = U;
-                label bgTypeId = backgroundGas.species();
-                scalar sTcR = totalCrossSection_->sigmaTcR
-                (
-                     *parcel,
-                     U,
-                     bgTypeId
-                );
-
-                //Update the maximum value
-                if (sTcR > sigmaTIoncRMax_[celli])
-                {
-                    sigmaTIoncRMax_[celli] = sTcR;
-                    backgroundCollisionPropIon_[celli] = 1.0 -::exp(-sTcR*backgroundGas.numberDensity().operator ()()[celli]*dt);
-                }
-
-                scalar QeCR = sTcR;
-                scalar QexcCR = 0.0;
-
-                //Nanbu 0.5 sigmaT is the charge exchange cross section: https://doi.org/10.1109/27.887765
-                if(chargeExchangeCollision_) {
-                    QeCR *= 0.5;
-                    QexcCR = QeCR;
-                }
-
-                scalar rndU = rndGen.scalar01();
-                if((QeCR/sigmaTcRMax) > rndU)//Elastic collision
-                {
-                    elasticCollision
-                    (
-                        parcel,
-                        U,
-                        bgTypeId
-                    );
-                    backgroundGas.collisionUpdate(CollisionEvent::Elastic, celli, preU, U);
-                    collisionsIon++;
-                }
-                else if((QeCR+QexcCR)/sigmaTcRMax > rndU)//Charge exchange
-                {
-                    chargeExchangeCollision
-                    (
-                        parcel,
-                        U,
-                        bgTypeId
-                    );
-                    backgroundGas.collisionUpdate(CollisionEvent::ChargeExchange, celli, preU, U);
-
-                    chargeExchanges++;
-                    collisionsIon++;
-                }
-            }
-        }
-
     }
     sigmaTcRMax_.correctBoundaryConditions();
-    sigmaTIoncRMax_.correctBoundaryConditions();
 
     //Parallel COM number of events
-    reduce(chargeExchanges,sumOp<label>());
-    reduce(collisionsIon, sumOp<label>());
     reduce(collisionsNeutral, sumOp<label>());
 
-    reduce(collisionCandidatesIon, sumOp<label>());
     reduce(collisionCandidatesNeutral, sumOp<label>());
 
     //Print info
@@ -915,23 +529,6 @@ void Foam::BinaryCollisionModel<CloudType>::performBackgroundCollisions()
     }
     else
         Info<< "    No Collisions between neutals and the background" << nl << endl;
-
-
-    if (collisionCandidatesIon)
-    {
-        Info << "    Collisions between ions and background  = "
-             << collisionsIon << nl
-             << "    Elastic                                = "
-             << collisionsIon-chargeExchanges << nl
-             << "    Charge exchange                        = "
-             << chargeExchanges << nl
-             << "    Acceptance rate                                      = "
-             << scalar(collisionsIon)/scalar(collisionCandidatesIon) << nl
-             << nl << endl;
-    }
-    else
-        Info<< "    No Collisions between ions and the background" << nl << endl;
-
 }
 
 template<class CloudType>
@@ -951,6 +548,9 @@ Foam::BinaryCollisionModel<CloudType>::initialize called by picInitialise
 template<class CloudType>
 void Foam::BinaryCollisionModel<CloudType>::initialize(Field<scalar>& temperatures, Field<scalar>& numberDensities)
 {
+    if(!active())
+        return;
+
     CloudType& cloud(this->owner());
     const BackgroundGasModel<CloudType>& backgroundGas(cloud.backgroundGas());
 
@@ -994,7 +594,7 @@ void Foam::BinaryCollisionModel<CloudType>::initialize(Field<scalar>& temperatur
     }
 
     if(T < VSMALL) {
-        Warning << "    In initialization of sigmaTcRMax_: Zero temperature for " << cloud.typeIdList()[maxSpecies] << " species" << nl << "    |_ Using default value of 293.15 K..." << endl;
+        Warning << "|->    In initialization of sigmaTcRMax_: Zero temperature for " << cloud.typeIdList()[maxSpecies] << " species" << nl << "       |= Using default value of 293.15 K..." << endl;
         T = 293.15;//Default value was chosen to be 293.15
     }
 
@@ -1006,57 +606,6 @@ void Foam::BinaryCollisionModel<CloudType>::initialize(Field<scalar>& temperatur
     );
 
     sigmaTcRMax_.correctBoundaryConditions();
-
-    const List<label>& ionSpecies(cloud.ionSpecies());
-    if(ionSpecies.size() == 0)
-        return;
-
-    //Look for the most common ion species
-    label maxIonSpecies = -1;
-    scalar maxIonDensity = 0.0;
-    forAll(ionSpecies,i)
-    {
-        label typeId = ionSpecies[i];
-
-        if(numberDensities[typeId] > maxIonDensity)
-        {
-            maxIonDensity = numberDensities[typeId];
-            maxIonSpecies = typeId;
-        }
-    }
-
-    if(maxIonSpecies == -1)//no inital ions use neutral max
-    {
-        sigmaTIoncRMax_.primitiveFieldRef() = cP.sigmaT()*cloud.maxwellianMostProbableSpeed
-        (
-              T,
-              cP.mass()
-        );
-    }
-    else
-    {
-        const typename CloudType::parcelType::constantProperties& cPIon = cloud.constProps(maxIonSpecies);
-
-
-        scalar Tion = temperatures[maxIonSpecies];
-        if(Tion < VSMALL) {
-            Warning << "    In initialization of sigmaTIoncRMax_: Zero temperature for ion species" << nl << "    |_ Using default value of 1 eV..." << endl;
-            Tion = 11604.52;//Default value was chosen to be 1 eV
-        }
-
-        scalar Ui = cloud.maxwellianMostProbableSpeed
-        (
-             Tion,
-             cPIon.mass()
-        );
-
-
-        //Use the hard sphere model and update the sigmaTIoncRMax field
-        scalar dPQ = 0.5*(cPIon.d()+cP.d());
-        sigmaTIoncRMax_.primitiveFieldRef() = dPQ*dPQ*constant::mathematical::pi*Ui;
-    }
-
-    sigmaTIoncRMax_.correctBoundaryConditions();
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

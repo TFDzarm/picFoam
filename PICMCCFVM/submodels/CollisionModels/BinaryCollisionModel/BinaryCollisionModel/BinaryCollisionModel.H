@@ -75,27 +75,12 @@ class BinaryCollisionModel
         //  updated as required, and read in on start/restart.
         volScalarField sigmaTcRMax_;
 
-        //- Separate group for ions
-        volScalarField sigmaTIoncRMax_;       
-
         //- A field holding the remainder from the previous collision selections
         volScalarField::Internal collisionSelectionRemainder_;
-
-        //- A field holding the remainder from the previous collision selections for light parcels
-        volScalarField::Internal collisionSelectionIonRemainder_;
 
         //- Pointer to the TotalCorssSection model
         autoPtr<TotalCrossSectionModel<CloudType>>
             totalCrossSection_;
-
-        //- Propbability of an ion to collide with the background gas model
-        volScalarField::Internal backgroundCollisionPropIon_;
-
-        //- Remainder of ion - background collision candidates
-        volScalarField::Internal backgroundCSRIon_;
-
-        //- Propbability an of neutral to collide with the background gas model
-        volScalarField::Internal backgroundCollisionProp_;
 
         //- Remainder of neutral - background collision candidates
         volScalarField::Internal backgroundCSR_;
@@ -104,8 +89,6 @@ class BinaryCollisionModel
         autoPtr<WeightCorrectionModel<CloudType>>
             weightCorrection_;
 
-        //- Switch whether to use the simple charge exchange model by Nanbu: https://doi.org/10.1109/27.887765
-        bool chargeExchangeCollision_;
 public:
 
     //- Runtime type information
@@ -169,17 +152,9 @@ public:
         // updating.
         inline volScalarField& sigmaTcRMax();
 
-        //- Return the sigmaTcRMax field.  non-const access to allow
-        // updating.
-        inline volScalarField& sigmaTIoncRMax();
-
         //- Return the collision selection remainder field.  non-const
         // access to allow updating.
         inline scalarField& collisionSelectionRemainder();
-
-        //- Return the ion collision selection remainder field.  non-const
-        // access to allow updating.
-        inline scalarField& collisionSelectionIonRemainder();
 
     // Member Functions
 
@@ -191,12 +166,6 @@ public:
 
         //- Elastic background collision
         void elasticCollision(typename CloudType::parcelType* pP, vector& Uq, label idQ);
-
-        //- Charge exchange collision
-        void chargeExchangeCollision(typename CloudType::parcelType* pP, typename CloudType::parcelType* pQ);
-
-        //- Charge exchange background collision
-        void chargeExchangeCollision(typename CloudType::parcelType* pP, vector& Uq, label idQ);
 
         //- Update the velocity through the choosen method
         virtual void updateVelocity
