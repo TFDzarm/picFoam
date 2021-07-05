@@ -1,0 +1,156 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  8
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version         2;
+    format          ascii;
+    class           dictionary;
+    location        "constant";
+    object          picProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+//Based on: Nanbu, Wakayama Japanese Journal of Applied Physics 1999 A Simple Model for Ar+-Ar, He+-He, Ne+-Ne and Kr+-Kr Collisions
+//Calculate the drift of argon ions in an argon background gas
+//Td = |E|/(133.33Pa / (k_B * 300K)) = 2000
+// => Expected dirft velocity ~2158 m/s
+
+SolverSettings
+{
+    //Species
+    typeIdList      ( Ar Ar+ );
+
+    spaceCharge     0;
+
+    checkDebyeLength false;
+    checkPlasmaFrequency false;
+
+    warnCellTrajectory 0.9;
+
+    ChargeDistribution VolumeWeighting;
+    FieldWeigthing  VolumeWeighting;
+
+    fieldCalculation ( );
+}
+
+Diagnostics
+{
+    modelList       ( Velocity Temperature Composition );
+
+    //Options:
+    CompositionCoeffs
+    {
+        printNumberDensity true;
+    }
+    TemperatureCoeffs
+    {
+        accountForDrift true;
+    }
+}
+
+moleculeProperties
+{
+    Ar
+    {
+        mass            6.68179e-26;
+        diameter        3.67e-10;
+        omega           1;
+        charge          0;
+        nEquivalentParticles 1.287607198e10;
+        solveMovement   false;
+    }
+    Ar+
+    {
+        mass            6.68179e-26;
+        diameter        3.67e-10;
+        omega           1;
+        charge          1.60218e-19;
+        nEquivalentParticles 1.287607198e10;
+        solveMovement   true;
+    }
+    SpeciesRelations
+    {
+        electronTypeId  none;
+        species1
+        {
+            neutralTypeId   Ar;
+            ionTypeId       Ar+;
+        }
+    }
+}
+
+BoundaryModels
+{
+    WallReflectionModel SpecularReflection;
+    PatchEventModels
+    {
+        modelList       ( );
+    }
+    PatchBoundaryModels
+    {
+        modelList       ( "leftBoundary|rightBoundary" { type none ; } );
+    }
+}
+
+
+ParticleMerging none;
+
+MaxwellSolver   none;
+
+ParticlePusher  Boris;
+
+
+CollisionModels
+{
+    BinaryCollisionModel none;
+    CoulombCollisionModel none;
+    ElectronNeutralCollisionModel none;
+
+    //Use an argon background gas model
+    BackgroundGasModel  uniformBackground;
+    BackgroundGasCoeffs
+    {
+        species Ar;
+        pressure 133.33;
+        temperature 300.0;
+        nEquivalentParticles 1.287607198e10;//Same as above
+        velocity            (0 0 0);
+    }
+
+    //Ion-Neutral collision model
+    IonNeutralCollisionModel IsotropicScattering;
+    
+    IonNeutralCollisionCoeffs
+    {
+        WeightCorrection none;
+        CrossSectionModels
+        {
+            Ar
+            {
+                //FixedValue (HardSphere CrossSection) using d_AB = c*d_B with c = 1.43
+                //Total CrossSection: 8.600956805e-19
+                //According to Nanbu the charge exchange cross section is half of this value
+                
+                ElasticCrossSection FixedValue;
+                ElasticFixedValueCoeffs
+                {
+                    value 4.300478403e-19;
+                }
+                ChargeExchangeCrossSection FixedValue;
+                ChargeExchangeFixedValueCoeffs
+                {
+                    value 4.300478403e-19;
+                    threshold 0;
+                }
+            }
+        }
+    }
+}
+
+
+// ************************************************************************* //

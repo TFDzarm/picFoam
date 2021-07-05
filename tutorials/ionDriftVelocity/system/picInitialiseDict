@@ -1,0 +1,56 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  8
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      picInitialiseDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+numberDensities
+{
+    Ar          0;
+    Ar+         0;
+};
+
+electronVolt    false;
+temperature
+{
+    Ar      0.0;
+    Ar+     300.0;
+}
+
+InitializationModel UniformDisplacement;
+
+UniformDisplacementCoeffs
+{
+    species (Ar+);
+    min (0.04985 0.0001 0);
+    max (0.04995 0.0001 0);
+    particleNumbers (5000 1 1);
+
+    cycles 1;
+    displacement (0.0);
+    displacementDir (1 0 0);
+}
+
+solveMaxwellEquations false;
+initalizeLeapFrog false;
+clearParticles true;
+initalizeCollisionModels true;
+
+CrossSectionInitialization
+{
+    ionNeutral  Temperature;
+}
+
+
+// ************************************************************************* //
