@@ -293,7 +293,7 @@ void Foam::IonNeutralCollisionModel<CloudType>::initialize(Field<scalar>& temper
         forAll(neutralSpecies,i)//Note list has only one entry...
         {
             label typeId = neutralSpecies[i];
-            label ionTypeId = cloud.ionSpecies()[typeId];
+            label ionTypeId = cloud.ionTypeId(typeId);
             const typename CloudType::parcelType::constantProperties& cP(cloud.constProps(ionTypeId));
             scalar massI = cP.mass();
 
@@ -339,7 +339,7 @@ void Foam::IonNeutralCollisionModel<CloudType>::initialize(Field<scalar>& temper
         forAll(neutralSpecies,i)//Note list has only one entry...
         {
             label typeId = neutralSpecies[i];
-            label ionTypeId = cloud.ionSpecies()[typeId];
+            label ionTypeId = cloud.ionTypeId(typeId);
 
             scalar Tion = temperatures[ionTypeId];
             if(Tion < VSMALL) {
