@@ -64,6 +64,8 @@ Foam::ListCrossSection<CloudType,Foam::crossSectionType::ElectronElasticCS>::Lis
     energies_(this->coeffDict().lookup("energies")),
     values_(this->coeffDict().lookup("values"))
 {
+      if(energies_.size() != values_.size())
+        FatalErrorInFunction << "Lists \"energies\" (size: " << energies_.size() << ") and \"values\" (size: " << values_.size() << ") are not of the same size" << abort(FatalError);
 }
 
 
@@ -104,7 +106,10 @@ Foam::ListCrossSection<CloudType,Foam::crossSectionType::ElectronExciationCS>::L
     energies_(this->coeffDict().lookup("energies")),
     values_(this->coeffDict().lookup("values")),
     threshold_(readScalar(this->coeffDict().lookup("threshold")))
-{}
+{
+      if(energies_.size() != values_.size())
+        FatalErrorInFunction << "Lists \"energies\" (size: " << energies_.size() << ") and \"values\" (size: " << values_.size() << ") are not of the same size" << abort(FatalError);
+}
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
@@ -143,7 +148,10 @@ Foam::ListCrossSection<CloudType,Foam::crossSectionType::ElectronIonizationCS>::
     energies_(this->coeffDict().lookup("energies")),
     values_(this->coeffDict().lookup("values")),
     threshold_(readScalar(this->coeffDict().lookup("threshold")))
-{}
+{
+      if(energies_.size() != values_.size())
+        FatalErrorInFunction << "Lists \"energies\" (size: " << energies_.size() << ") and \"values\" (size: " << values_.size() << ") are not of the same size" << abort(FatalError);
+}
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
@@ -182,7 +190,10 @@ Foam::ListCrossSection<CloudType,Foam::crossSectionType::IonElasticCS>::ListCros
     CrossSectionModel<CloudType,Foam::crossSectionType::IonElasticCS>(dict, cloud, "Elastic" + typeName ,associatedTypeId),
     energies_(this->coeffDict().lookup("energies")),
     values_(this->coeffDict().lookup("values"))
-{}
+{
+      if(energies_.size() != values_.size())
+        FatalErrorInFunction << "Lists \"energies\" (size: " << energies_.size() << ") and \"values\" (size: " << values_.size() << ") are not of the same size" << abort(FatalError);
+}
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
@@ -223,7 +234,10 @@ Foam::ListCrossSection<CloudType,Foam::crossSectionType::IonChargeExCS>::ListCro
     energies_(this->coeffDict().lookup("energies")),
     values_(this->coeffDict().lookup("value")),
     threshold_(readScalar(this->coeffDict().lookup("threshold")))
-{}
+{
+      if(energies_.size() != values_.size())
+        FatalErrorInFunction << "Lists \"energies\" (size: " << energies_.size() << ") and \"values\" (size: " << values_.size() << ") are not of the same size" << abort(FatalError);
+}
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
