@@ -182,11 +182,11 @@ class BrusaCrossSection<CloudType,crossSectionType::ElectronExciationCS>
 //Private data
 
     //- Data provided by Brusa
-    scalarList F_ = {77.65,85.97,25.19,22.0,18.27};
-    scalarList G_ = {0,31.7e-3,23.6e-3,23.3e-3,0};
-    scalarList Eex_ = {19.8,16.619,11.5,9.915,8.315};
-    scalarList minEex_ = {20.0,30.0,20.0,20.0,80.0};
-    scalarList maxEex_ = {500.0,4000.0,3000.0,4000.0,10000.0};
+    scalarList F_ = {85.97,25.19,22.0,18.27};
+    scalarList G_ = {31.7e-3,23.6e-3,23.3e-3,0};
+    scalarList Eex_ = {16.619,11.5,9.915,8.315};
+    scalarList minEex_ = {30.0,20.0,20.0,80.0};
+    scalarList maxEex_ = {4000.0,3000.0,4000.0,10000.0};
 
 public:
     //- Runtime type information
@@ -236,13 +236,13 @@ class BrusaCrossSection<CloudType,crossSectionType::ElectronIonizationCS>
 //Private data
 
     //- Data provided by Brusa
-    scalarList L_ = {2000.0,7.92,78.76,33.76,1000.0};
-    scalarList M_ = {70.9,7.04,18.62,15.93,53.79};
-    scalarList N_ = {0.0,0.0,25.66,14.45,109.6};
-    scalarList P_ = {1.49e-3,21.6e-3,8.42e-3,12.6e-3,3.58e-3};
-    scalarList Eion_ = {24.587,21.584,15.759,13.999,12.130};
-    scalarList minEion_ = {24.587,21.584,15.759,13.999,12.130};
-    scalarList maxEion_ = {5000.0,5000.0,5000.0,5000.0,5000.0};
+    scalarList L_ = {7.92,78.76,33.76,1000.0};
+    scalarList M_ = {7.04,18.62,15.93,53.79};
+    scalarList N_ = {0.0,25.66,14.45,109.6};
+    scalarList P_ = {21.6e-3,8.42e-3,12.6e-3,3.58e-3};
+    scalarList Eion_ = {21.584,15.759,13.999,12.130};
+    scalarList minEion_ = {21.584,15.759,13.999,12.130};
+    scalarList maxEion_ = {5000.0,5000.0,5000.0,5000.0};
 
 public:
     //- Runtime type information
