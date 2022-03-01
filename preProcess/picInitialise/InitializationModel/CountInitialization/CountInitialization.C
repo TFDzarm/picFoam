@@ -110,7 +110,7 @@ void Foam::CountInitialization<CloudType>::initialiseParticles()
                         mesh,
                         celli
                     );
-                    label rndTetI = rndGen.sampleAB(0,cellTets.size());
+                    label rndTetI = rndGen.sampleAB<label>(0,cellTets.size());
                     const tetIndices& cellTetIs = cellTets[rndTetI];
                     tetPointRef tet = cellTetIs.tet(cloud.mesh());
 
@@ -196,13 +196,13 @@ void Foam::CountInitialization<CloudType>::initialiseParticles()
         label rem = countList[typeId]-insertedCount[typeId];
         for(int i = 0; i < rem; i++)
         {
-            label rndCellI = rndGen.sampleAB(0,mesh.cells().size());
+            label rndCellI = rndGen.sampleAB<label>(0,mesh.cells().size());
             List<tetIndices> cellTets = polyMeshTetDecomposition::cellTetIndices
             (
                 mesh,
                 rndCellI
             );
-            label rndTetI = rndGen.sampleAB(0,cellTets.size());
+            label rndTetI = rndGen.sampleAB<label>(0,cellTets.size());
             const tetIndices& cellTetIs = cellTets[rndTetI];
             tetPointRef tet = cellTetIs.tet(cloud.mesh());
 
