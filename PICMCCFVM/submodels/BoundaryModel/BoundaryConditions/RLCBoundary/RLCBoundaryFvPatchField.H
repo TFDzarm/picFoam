@@ -96,21 +96,6 @@ public:
             const fvPatchFieldMapper&
         );
 
-        //- Construct as copy
-        RLCBoundaryFvPatchField
-        (
-            const RLCBoundaryFvPatchField&
-        );
-
-        //- Construct and return a clone
-        virtual tmp<fvPatchField<scalar>> clone() const
-        {
-            return tmp<fvPatchField<scalar>>
-            (
-                new RLCBoundaryFvPatchField(*this)
-            );
-        }
-
         //- Construct as copy setting internal field reference
         RLCBoundaryFvPatchField
         (

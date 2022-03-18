@@ -25,12 +25,10 @@ License
 
 #include "picParcel.H"
 #include "PICParcel.H"
-#include "PICCloud.H"
 
 namespace Foam
 {
     defineTemplateTypeNameAndDebug(PICParcel<particle>, 0);
-    defineTemplateTypeNameAndDebug(Cloud<picParcel>, 0);
 }
 
 

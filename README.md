@@ -9,7 +9,8 @@ The solver is developed at ZARM (Center of Applied Space Technology and Microgra
 
 # Instructions
 
-picFoam requires [OpenFOAM version 8](https://github.com/OpenFOAM/OpenFOAM-8).
+This branch of picFoam requires [OpenFOAM version 9](https://github.com/OpenFOAM/OpenFOAM-9).
+WARNING: The branch wasn't tested thoroughly, but should work just fine.
 
 Detailed installation instructions for OpenFOAM can be found [here](https://openfoam.org/download/source/).
 
@@ -23,37 +24,40 @@ Summery of the OpenFOAM installtion (link above):
        OpenFOAM:
 
 		build-essential
-		flex
-		bison
-		git-core
 		cmake
-		zlib1g-dev
-		libboost-system-dev
-		libboost-thread-dev
-		libopenmpi-dev
-		openmpi-bin
-		gnuplot
-		libreadline-dev
-		libncurses-dev
-		libxt-dev
+        git
+        ca-certificates
+        flex
+        libfl-dev
+        bison
+        zlib1g-dev
+        libboost-system-dev
+        libboost-thread-dev
+        libopenmpi-dev
+        openmpi-bin
+        gnuplot
+        libreadline-dev
+        libncurses-dev
+        libxt-dev
 
 	ParaView:
 
 		libqt5x11extras5-dev
 		libxt-dev
 		qt5-default
-		qttools5-dev curl
+		qttools5-dev
+        curl
 
 3. Clone OpenFOAM repositories (recommended installation directory $HOME/OpenFOAM):
-    git clone https://github.com/OpenFOAM/OpenFOAM-8.git
-    git clone https://github.com/OpenFOAM/ThirdParty-8.git
+    git clone https://github.com/OpenFOAM/OpenFOAM-9.git
+    git clone https://github.com/OpenFOAM/ThirdParty-9.git
 
 4. Set the environment variables:
-    source $HOME/OpenFOAM/OpenFOAM-8/etc/bashrc
+    source $HOME/OpenFOAM/OpenFOAM-9/etc/bashrc
 
-5. Compile Scotch/PT-Scotch: Run the **Allwmake** script in $HOME/OpenFOAM/ThirdParty-8
-6. Compile OpenFOAM: Run the **Allwmake** script in $HOME/OpenFOAM/OpenFOAM-8
-7. Compile ParaView: Run the **makeParaView** script in $HOME/OpenFOAM/ThirdParty-8
+5. Compile Scotch/PT-Scotch: Run the **Allwmake** script in $HOME/OpenFOAM/ThirdParty-9
+6. Compile OpenFOAM: Run the **Allwmake** script in $HOME/OpenFOAM/OpenFOAM-9
+7. Compile ParaView: Run the **makeParaView** script in $HOME/OpenFOAM/ThirdParty-9
 
 ## picFoam installation
 

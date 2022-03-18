@@ -31,6 +31,7 @@ License
 #include "tetIndices.H"
 #include "meshTools.H"
 #include "polyMeshTetDecomposition.H"
+#include "polygonTriangulate.H"
 
 template<class CloudType>
 Foam::ParticleEmitter<CloudType>::ParticleEmitter(CloudType& cloud) :
@@ -82,23 +83,24 @@ void Foam::ParticleEmitter<CloudType>::initilizeParticleEmitter(label patchId, V
     // Triangulate the patch faces and create addressing
     DynamicList<label> triToFace(2*patch.size());
     DynamicList<scalar> triMagSf(2*patch.size());
-    DynamicList<face> triFaces(2*patch.size());
-    DynamicList<face> tris(5);
+    DynamicList<triFace> triFaces(2*patch.size());
 
     triMagSf.append(0.0);
+
+    // Create a triangulation engine
+    polygonTriangulate triEngine;
 
     forAll(patch, facei)
     {
         const face& f = patch[facei];
 
-        tris.clear();
-        f.triangles(points, tris);
+        triEngine.triangulate(UIndirectList<point>(points, f));
 
-        forAll(tris, i)
+        forAll(triEngine.triPoints(), i)
         {
             triToFace.append(facei);
-            triFaces.append(tris[i]);
-            triMagSf.append(tris[i].mag(points));
+            triFaces.append(triEngine.triPoints(i, f));
+            triMagSf.append(triEngine.triPoints(i, f).mag(points));
         }
     }
     forAll(sumTriMagSf_, i)

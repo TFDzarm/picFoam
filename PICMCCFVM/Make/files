@@ -1,10 +1,10 @@
-/* Parcels */
+# Parcels
 parcels/derived/picParcel/picParcel.C
 
-/* Cloud base classes */
-clouds/baseClasses/PICBaseCloud/PICBaseCloud.C
+# Cloud base classes
+clouds/Templates/PICCloud/PICCloudName.C
 
-/* Sub-models */
+# Sub-models
 parcels/derived/picParcel/definePICParcel.C
 
 
@@ -25,7 +25,7 @@ parcels/derived/picParcel/makeParticleMerging.C
 
 submodels/BoundaryModel/BoundaryConditions/RLCBoundary/RLCBoundaryFvPatchField.C
 
-/* fixedGradient */
+# fixedGradient
 submodels/BoundaryModel/BoundaryConditions/circuitBoundary/circuitBoundaryFvPatchField.C
 
 LIB = $(FOAM_USER_LIBBIN)/libPICMCC

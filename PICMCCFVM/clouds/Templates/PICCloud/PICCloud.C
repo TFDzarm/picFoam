@@ -721,7 +721,6 @@ Foam::PICCloud<ParcelType>::PICCloud
 )
 :
     Cloud<ParcelType>(mesh, cloudName, false),
-    PICBaseCloud(),
     cloudName_(cloudName),
     mesh_(mesh),
     particleProperties_
@@ -999,7 +998,6 @@ Foam::PICCloud<ParcelType>::PICCloud
 )
     :
     Cloud<ParcelType>(mesh, cloudName, false),
-    PICBaseCloud(),
     cloudName_(cloudName),
     mesh_(mesh),
     particleProperties_

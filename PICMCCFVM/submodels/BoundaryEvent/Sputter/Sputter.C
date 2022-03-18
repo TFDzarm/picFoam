@@ -31,6 +31,7 @@ License
 #include "Time.H"
 #include "polyMesh.H"
 #include "Pstream.H"
+#include "polygonTriangulate.H"
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
@@ -130,27 +131,24 @@ Foam::SputterEvent<CloudType>::SputterEvent
         patchTriFaces_[patchId].setSize(patch.size());
         const pointField& points = patch.points();
 
-        DynamicList<face> triFace(2);
-        DynamicList<face> tris(5);
+        DynamicList<triFace> triFace(2);
 
         const scalarField magSf(mag(patch.faceAreas()));
-        //patchAreas_[patchId] = sum(magSf);
-
         patchNormal_[patchId] = patch.faceAreas()/magSf;
+
+        // Create a triangulation engine
+        polygonTriangulate triEngine;
 
         forAll(patch, facei)
         {
             const face& f = patch[facei];
 
-            triFace.clear();
-            tris.clear();
-            f.triangles(points, tris);
+            triEngine.triangulate(UIndirectList<point>(points, f));
 
-            forAll(tris, i)
+            forAll(triEngine.triPoints(), i)
             {
-                triFace.append(tris[i]);
+                triFace.append(triEngine.triPoints(i, f));
             }
-
             patchTriFaces_[patchId][facei].transfer(triFace);
         }
 

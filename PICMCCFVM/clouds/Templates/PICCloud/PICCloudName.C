@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Copyright (C) 2018-2020 picFoam
+    \\  /    A nd           | Copyright (C) 2020 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -23,26 +23,14 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "PICBaseCloud.H"
+#include "PICCloud.H"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
 namespace Foam
 {
-    defineTypeNameAndDebug(PICBaseCloud, 0);
+    defineTypeNameAndDebug(PICCloudName, 0);
 }
-
-
-// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-
-Foam::PICBaseCloud::PICBaseCloud()
-{}
-
-
-// * * * * * * * * * * * * * * * *  Destructors  * * * * * * * * * * * * * * //
-
-Foam::PICBaseCloud::~PICBaseCloud()
-{}
 
 
 // ************************************************************************* //

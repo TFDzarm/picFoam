@@ -96,22 +96,6 @@ Foam::RLCBoundaryFvPatchField::RLCBoundaryFvPatchField
 
 Foam::RLCBoundaryFvPatchField::RLCBoundaryFvPatchField
 (
-    const RLCBoundaryFvPatchField& ptf
-)
-:
-    fvPatchField<scalar>(ptf),
-    coeff1_(ptf.coeff1_),
-    coeff2_(ptf.coeff2_),
-    Q_(ptf.Q_),
-    Q1_(ptf.Q1_),
-    Q2_(ptf.Q2_),
-    Q3_(ptf.Q3_),
-    sigma_(ptf.sigma_)
-{}
-
-
-Foam::RLCBoundaryFvPatchField::RLCBoundaryFvPatchField
-(
     const RLCBoundaryFvPatchField& ptf,
     const DimensionedField<scalar, volMesh>& iF
 )

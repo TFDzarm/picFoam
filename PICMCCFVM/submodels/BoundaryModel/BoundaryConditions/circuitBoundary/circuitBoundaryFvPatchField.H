@@ -89,21 +89,6 @@ public:
             const fvPatchFieldMapper&
         );
 
-        //- Construct as copy
-        circuitBoundaryFvPatchField
-        (
-            const circuitBoundaryFvPatchField&
-        );
-
-        //- Construct and return a clone
-        virtual tmp<fvPatchField<scalar>> clone() const
-        {
-            return tmp<fvPatchField<scalar>>
-            (
-                new circuitBoundaryFvPatchField(*this)
-            );
-        }
-
         //- Construct as copy setting internal field reference
         circuitBoundaryFvPatchField
         (

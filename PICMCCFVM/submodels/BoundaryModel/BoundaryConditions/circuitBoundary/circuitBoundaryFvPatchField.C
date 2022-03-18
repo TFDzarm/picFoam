@@ -97,17 +97,6 @@ Foam::circuitBoundaryFvPatchField::circuitBoundaryFvPatchField
 
 Foam::circuitBoundaryFvPatchField::circuitBoundaryFvPatchField
 (
-    const circuitBoundaryFvPatchField& ptf
-)
-:
-    fvPatchField<scalar>(ptf),
-    circuitGradient_(ptf.circuitGradient_),
-    area_(ptf.area_)
-{}
-
-
-Foam::circuitBoundaryFvPatchField::circuitBoundaryFvPatchField
-(
     const circuitBoundaryFvPatchField& ptf,
     const DimensionedField<scalar, volMesh>& iF
 )

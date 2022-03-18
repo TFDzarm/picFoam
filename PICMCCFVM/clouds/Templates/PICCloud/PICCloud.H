@@ -37,7 +37,6 @@ SourceFiles
 #define PICCloud_H
 
 #include "Cloud.H"
-#include "PICBaseCloud.H"
 #include "IOdictionary.H"
 #include "autoPtr.H"
 #include "Random.H"
@@ -107,11 +106,13 @@ class ParticleMerging;
                          Class PICCloud Declaration
 \*---------------------------------------------------------------------------*/
 
+TemplateName(PICCloud);
+
 template<class ParcelType>
 class PICCloud
 :
     public Cloud<ParcelType>,
-    public PICBaseCloud
+    public PICCloudName
 {
     // Private data
 

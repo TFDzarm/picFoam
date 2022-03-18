@@ -41,6 +41,7 @@ SourceFiles
 #include "vectorList.H"
 #include "faceList.H"
 #include "polyPatch.H"
+#include "triFaceList.H"
 
 namespace Foam
 {
@@ -66,7 +67,7 @@ namespace Foam
         labelList cellOwners_;
 
         //- Decomposed patch faces as a list of triangles
-        faceList triFaces_;
+        triFaceList triFaces_;
 
         //- Addressing from per triangle to patch face
         labelList triToFace_;

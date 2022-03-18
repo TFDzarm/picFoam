@@ -37,6 +37,7 @@ SourceFiles
 #define SputterEvent_H
 
 #include "BoundaryEvent.H"
+#include "triFaceList.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -66,7 +67,7 @@ class SputterEvent :
         List<List<vector>> patchNormal_;
 
         //- Tris that belong to a face on a patch
-        List<List<List<face>>> patchTriFaces_;
+        List<List<List<triFace>>> patchTriFaces_;
 
         //- Should we print info?
         bool printInfo_;
