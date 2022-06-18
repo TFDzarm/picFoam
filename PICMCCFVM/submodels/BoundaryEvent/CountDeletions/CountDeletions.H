@@ -52,11 +52,11 @@ class CountDeletions :
 {
     //Private data
 
-        //- Total number of particles deleted
-        List<Field<scalar>> totalCountParticle_;
-
         //- Number of particles delted in the current timestep
         List<Field<scalar>> countParticle_;
+
+        //- Number of parcels delted in the current timestep
+        List<Field<label>> countParcel_;
 
         //- Running average of deleted particles
         List<Field<scalar>> runningAverage_;

@@ -36,15 +36,15 @@ Foam::CountDeletions<CloudType>::CountDeletions
 )
 :
     BoundaryEvent<CloudType>(dict,cloud,associatedPatches),
-    totalCountParticle_(),
     countParticle_(),
+    countParcel_(),
     runningAverage_(),
     averageStart_(cloud.mesh().time().value())
 {
     const polyMesh& mesh(cloud.mesh());
 
     countParticle_.setSize(mesh.boundaryMesh().size(),Field<scalar>(cloud.typeIdList().size(),0.0));
-    totalCountParticle_.setSize(mesh.boundaryMesh().size(),Field<scalar>(cloud.typeIdList().size(),0.0));
+    countParcel_.setSize(mesh.boundaryMesh().size(),Field<label>(cloud.typeIdList().size(),0));
     runningAverage_.setSize(mesh.boundaryMesh().size(),Field<scalar>(cloud.typeIdList().size(),0.0));
 }
 
@@ -52,7 +52,6 @@ template<class CloudType>
 Foam::CountDeletions<CloudType>::CountDeletions(const CountDeletions<CloudType>& im)
 :
     BoundaryEvent<CloudType>(im.owner_),
-    totalCountParticle_(im.totalCountParticle_),
     countParticle_(im.countParticle_),
     runningAverage_(im.runningAverage_),
     averageStart_(im.averageStart_)
@@ -71,8 +70,8 @@ Foam::CountDeletions<CloudType>::~CountDeletions()
 template<class CloudType>
 void Foam::CountDeletions<CloudType>::collisionEvent(typename CloudType::parcelType& p, typename CloudType::parcelType::trackingData& td)
 {
-    //Count the number of deleted particles
     if(!td.keepParticle) {
+        countParcel_[p.patch()][p.typeId()]++;
         countParticle_[p.patch()][p.typeId()]+= p.nParticle();
     }
 }
@@ -83,37 +82,38 @@ void Foam::CountDeletions<CloudType>::info()
     CloudType& cloud(this->owner());
     const polyMesh& mesh(cloud.mesh());
 
-    if(cloud.isInitializing())//Do nothing when we are initializing
+    if(cloud.isInitializing())
         return;
 
 
-    //Calculate a running average...
     scalar dt = mesh.time().deltaTValue();
     scalar beta = dt/(mesh.time().value()-averageStart_);
+
+    Info << nl << "[" << typeName << "]" << nl;
 
     forAll(this->associatedPatches(),i)
     {
         label patchId = this->associatedPatches()[i];
         const polyPatch& patch = mesh.boundaryMesh()[patchId];
 
-        //Parallel COM
+        Info << "    " << patch.name() << ':' << nl;
+
+        Pstream::listCombineGather(countParcel_[patchId], plusEqOp<label>());
+        Pstream::listCombineScatter(countParcel_[patchId]);
+
         Pstream::listCombineGather(countParticle_[patchId], plusEqOp<scalar>());
         Pstream::listCombineScatter(countParticle_[patchId]);
 
         forAll(cloud.typeIdList(),j)
         {
-            const typename CloudType::parcelType::constantProperties& cP = cloud.constProps(j);
-            totalCountParticle_[patchId][j] += countParticle_[patchId][j];
-
-            runningAverage_[patchId][j] = (1.0-beta)*runningAverage_[patchId][j] + beta*countParticle_[patchId][j];//running average
-
+            runningAverage_[patchId][j] = (1.0-beta)*runningAverage_[patchId][j] + beta*countParticle_[patchId][j];
             scalar rate = runningAverage_[patchId][j]/dt;
-            Info << "[patch: " << patch.name() << "]" << " Deletion rate (" << cloud.typeIdList()[j] << "): " << rate << " particle/s; I: " << rate * cP.charge() << " A" << endl;
 
-            scalar total = totalCountParticle_[patchId][j];
-            Info << "[patch: " << patch.name() << "]" << " Total deletion (" << cloud.typeIdList()[j] << "): " << total << " particles" << endl;
+            Info << "        [" << cloud.typeIdList()[j] << "] parcel = " << countParcel_[patchId][j] << " | particle = " << countParticle_[patchId][j] << " | flow rate = " << rate << " 1/s" << nl;
 
+            //Reset
             countParticle_[patchId][j] = 0.0;
+            countParcel_[patchId][j] = 0;
         }
     }
 

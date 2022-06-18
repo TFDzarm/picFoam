@@ -107,6 +107,9 @@ public:
         virtual void injection();
 
         using BoundaryModel<CloudType>::particleEjection;
+
+        //- Collisions with associated patches
+        bool particleBC(typename CloudType::parcelType& p, typename CloudType::parcelType::trackingData& td);
 };
 
 

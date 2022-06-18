@@ -399,5 +399,12 @@ void Foam::FreeStream<CloudType>::injection()
 
 }
 
+template<class CloudType>
+bool Foam::FreeStream<CloudType>::particleBC(typename CloudType::parcelType& p, typename CloudType::parcelType::trackingData& td)
+{
+    //All particles reaching this patch will be deleted, set this here so BoundaryEvent models know about this
+    td.keepParticle = false;
+    return false;
+}
 
 // ************************************************************************* //
