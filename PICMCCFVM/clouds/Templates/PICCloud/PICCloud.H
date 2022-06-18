@@ -250,10 +250,10 @@ class PICCloud
         // boundary value fields
 
             //- Boundary temperature
-            volScalarField T_;
+            volScalarField boundaryT_;
 
             //- Boundary velocity
-            volVectorField U_;
+            volVectorField boundaryU_;
 
 
         // References to the cloud sub-models
@@ -445,10 +445,10 @@ public:
                 inline const volVectorField& fD() const;
 
                 //- Return macroscopic temperature - boundary values only
-                inline const volScalarField& T() const;
+                inline const volScalarField& boundaryT() const;
 
                 //- Return macroscopic velocity - boundary values only
-                inline const volVectorField& U() const;
+                inline const volVectorField& boundaryU() const;
 
                 //- Return the real particle number density field
                 inline const volScalarField& rhoN() const;

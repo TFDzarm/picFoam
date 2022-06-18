@@ -224,17 +224,17 @@ Foam::PICCloud<ParcelType>::jBF()
 
 template<class ParcelType>
 inline const Foam::volScalarField&
-Foam::PICCloud<ParcelType>::T() const
+Foam::PICCloud<ParcelType>::boundaryT() const
 {
-    return T_;
+    return boundaryT_;
 }
 
 
 template<class ParcelType>
 inline const Foam::volVectorField&
-Foam::PICCloud<ParcelType>::U() const
+Foam::PICCloud<ParcelType>::boundaryU() const
 {
-    return U_;
+    return boundaryU_;
 }
 
 

@@ -139,12 +139,12 @@ void Foam::FreeStream<CloudType>::injection()
 
     const volScalarField::Boundary& boundaryT
     (
-        cloud.T().boundaryField()
+        cloud.boundaryT().boundaryField()
     );
 
     const volVectorField::Boundary& boundaryU
     (
-        cloud.U().boundaryField()
+        cloud.boundaryU().boundaryField()
     );
 
 

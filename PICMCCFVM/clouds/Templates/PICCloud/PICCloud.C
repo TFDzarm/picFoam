@@ -913,10 +913,10 @@ Foam::PICCloud<ParcelType>::PICCloud
     picInitialiseDict_(dictionary::null),
     constProps_(),
     rndGen_(label(149382906) + 7183*Pstream::myProcNo()),
-    T_(
+    boundaryT_(
         IOobject
         (
-            "T",
+            "boundaryT",
             mesh_.time().timeName(),
             mesh_,
             IOobject::MUST_READ,
@@ -924,11 +924,11 @@ Foam::PICCloud<ParcelType>::PICCloud
         ),
         mesh_
     ),
-    U_
+    boundaryU_
     (
         IOobject
         (
-            "U",
+            "boundaryU",
             mesh_.time().timeName(),
             mesh_,
             IOobject::MUST_READ,
@@ -1207,11 +1207,11 @@ Foam::PICCloud<ParcelType>::PICCloud
     picInitialiseDict_(picInitialiseDict),
     constProps_(),
     rndGen_(label(971501) + 1526*Pstream::myProcNo()),
-    T_
+    boundaryT_
     (
         IOobject
         (
-            "T",
+            "boundaryT",
             mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
@@ -1220,11 +1220,11 @@ Foam::PICCloud<ParcelType>::PICCloud
         mesh_,
         dimensionedScalar("zero",  dimensionSet(0, 0, 0, 1, 0), 0.0)
     ),
-    U_
+    boundaryU_
     (
         IOobject
         (
-            "U",
+            "boundaryU",
             mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
