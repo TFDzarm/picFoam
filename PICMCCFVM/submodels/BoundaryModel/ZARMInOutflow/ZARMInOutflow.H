@@ -33,6 +33,7 @@ Description
 #define ZARMInOutflow_H
 
 #include "BoundaryModel.H"
+#include "volFields.H"
 #include "polyMesh.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -53,7 +54,7 @@ class ZARMInOutflow
         enum patchType
         {
             pTNoInteraction,
-            pTOutlet,
+            pTInletOutlet,
             pTInlet
         };
 
@@ -77,6 +78,11 @@ class ZARMInOutflow
         //- List of patch types for all patches
         List<patchType> interactionList_;
 
+        //- Boundary temperatures for each species separately
+        List<Field<scalar>> boundaryT_;
+
+        //- Boundary velocity for each species separately
+        List<Field<vector>> boundaryU_;
 public:
 
     //- Runtime type information

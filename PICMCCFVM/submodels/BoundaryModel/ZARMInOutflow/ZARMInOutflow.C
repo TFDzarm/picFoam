@@ -45,7 +45,9 @@ Foam::ZARMInOutflow<CloudType>::ZARMInOutflow
     moleculeTypeIds_(),
     numberDensities_(),
     particleFluxAccumulators_(),
-    interactionList_(cloud.mesh().boundaryMesh().size(),pTNoInteraction)
+    interactionList_(cloud.mesh().boundaryMesh().size(),pTNoInteraction),
+    boundaryT_(),
+    boundaryU_()
 {
     // Identify which patches to use
     DynamicList<label> patches;
@@ -65,12 +67,12 @@ Foam::ZARMInOutflow<CloudType>::ZARMInOutflow
             const word type(patchPropertiesDict.lookup("type"));
             if(type == "inlet")
                 interactionList_[p] = pTInlet;
-            else if(type == "outlet")
-                interactionList_[p] = pTOutlet;
+            else if(type == "inletOutlet")
+                interactionList_[p] = pTInletOutlet;
             else
             {
                 FatalErrorInFunction
-                        << "patch type " << type << " for patch " << patch.name() << " not defined. valid options: [inlet/outlet]" << nl
+                        << "patch type " << type << " for patch " << patch.name() << " not defined. valid options: [inlet/inletOutlet]" << nl
                         << abort(FatalError);
             }
         }
@@ -107,7 +109,8 @@ Foam::ZARMInOutflow<CloudType>::ZARMInOutflow
 
     moleculeTypeIds_.setSize(patches_.size());
     numberDensities_.setSize(patches_.size());
-
+    boundaryT_.setSize(patches_.size());
+    boundaryU_.setSize(patches_.size());
 
     forAll(patches_, p)
     {
@@ -118,12 +121,40 @@ Foam::ZARMInOutflow<CloudType>::ZARMInOutflow
         numberDensities_[p].setSize(molecules[p].size());
         //On the inlet the faceFlux [1/(m^2 s)] is given...
         const dictionary& numberDensitiesDict = (pT == pTInlet) ? this->coeffDict().subDict(patch.name()).subDict("faceFlux") : this->coeffDict().subDict(patch.name()).subDict("numberDensities");
+
+        const dictionary& temperatureDict
+        (
+            this->coeffDict().subDict(patch.name()).subDict("temperature")
+        );
+
+        const dictionary& velocityDict
+        (
+            this->coeffDict().subDict(patch.name()).subDict("velocity")
+        );
+
         forAll(molecules[p], i)
         {
             numberDensities_[p][i] = readScalar
             (
                 numberDensitiesDict.lookup(molecules[p][i])
             );
+
+            //This is one fixed temperature, do we require a field?
+            boundaryT_[p][i] = readScalar
+            (
+                temperatureDict.lookup(molecules[p][i])
+            );
+
+            if (boundaryT_[p][i] < small)
+            {
+                FatalErrorInFunction
+                    << "Zero boundary temperature detected, check value for species "
+                    << molecules[i] << " at patch " << patch.name() << nl
+                    << nl << abort(FatalError);
+            }
+
+            boundaryU_[p][i] = velocityDict.lookup(molecules[p][i]);
+
             label typeId = findIndex(cloud.typeIdList(), molecules[p][i]);
             moleculeTypeIds_[p][i] = typeId;
 
@@ -165,18 +196,6 @@ void Foam::ZARMInOutflow<CloudType>::injection()
 
     label particlesInserted = 0;
 
-    //use the boundary temperature and drift velocity
-    const volScalarField::Boundary& boundaryT
-    (
-        cloud.boundaryT().boundaryField()
-    );
-
-    const volVectorField::Boundary& boundaryU
-    (
-        cloud.boundaryU().boundaryField()
-    );
-
-
     forAll(patches_, p)
     {
         label patchi = patches_[p];
@@ -195,19 +214,11 @@ void Foam::ZARMInOutflow<CloudType>::injection()
 
             scalar mass = cloud.constProps(typeId).mass();
 
-            if (min(boundaryT[patchi]) < SMALL)
-            {
-                FatalErrorInFunction
-                    << "Zero boundary temperature detected, check boundaryT "
-                    << "condition." << nl
-                    << nl << abort(FatalError);
-            }
-
             scalarField mostProbableSpeed
             (
                 cloud.maxwellianMostProbableSpeed
                 (
-                    boundaryT[patchi],
+                    boundaryT_[patchi][i],
                     mass
                 )
             );
@@ -219,7 +230,7 @@ void Foam::ZARMInOutflow<CloudType>::injection()
 
             scalarField sCosTheta
             (
-                (boundaryU[patchi] & -patch.faceAreas()/mag(patch.faceAreas()))
+                (boundaryU_[patchi] & -patch.faceAreas()/mag(patch.faceAreas()))
               / mostProbableSpeed
             );
 
@@ -298,12 +309,11 @@ void Foam::ZARMInOutflow<CloudType>::injection()
             vector t2 = n^t1;
             t2 /= mag(t2);
 
-            scalar faceTemperature = boundaryT[patchi][pFI];
-
-            const vector& faceVelocity = boundaryU[patchi][pFI];
-
             forAll(pFA, i)
             {
+                scalar faceTemperature = boundaryT_[patchi][i];
+                const vector& faceVelocity = boundaryU_[patchi][i];
+
                 scalar& faceAccumulator = pFA[i][pFI];
 
                 // Number of whole particles to insert
@@ -450,8 +460,12 @@ bool Foam::ZARMInOutflow<CloudType>::particleBC(typename CloudType::parcelType& 
         //Do a simple specular reflection,
         //this patch is open => there is no actual wall
         p.specularReflect();
+        td.requireResync() = true;//Is this correct? If we do not do this charged particles are in sync going forward...
         return true;
     }
+
+    //All particles reaching this patch will be deleted, set this here so BoundaryEvent models know about this
+    td.keepParticle = false;
     return false;
 }
 
