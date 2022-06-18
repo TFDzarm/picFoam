@@ -23,29 +23,27 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "picParcel.H"
-#include "PICCloud.H"
-#include "BorisPusher.H"
-#include "BorisNRPusher.H"
-#include "VayPusher.H"
-#include "HigueraCary.H"
+#include "fvCFD.H"
 #include "NoPush.H"
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+#include "subCycleTime.H"
 
-namespace Foam
-{
-    typedef PICCloud<picParcel> CloudType;
+// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-    //Definition of the selection table
-    makeParticlePusher(PICCloud<picParcel>)
+template<class CloudType>
+Foam::NoPush<CloudType>::NoPush
+(
+    const dictionary& dict,
+    CloudType& cloud
+)
+:
+    ParticlePusher<CloudType>(cloud)
+{}
 
-    //Add the Pusher models
-    makeParticlePusherType(BorisPusher, CloudType)
-    makeParticlePusherType(BorisNRPusher, CloudType)
-    makeParticlePusherType(VayPusher, CloudType)
-    makeParticlePusherType(HigueraCaryPusher, CloudType)
-    makeParticlePusherType(NoPush, CloudType)
-}
 
+// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
+
+template<class CloudType>
+Foam::NoPush<CloudType>::~NoPush()
+{}
 
 // ************************************************************************* //
