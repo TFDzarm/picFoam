@@ -115,14 +115,18 @@ void Foam::DiagnosticsList<CloudType>::info()
 
     //Check if at least one model should execute.
     const CloudType& cloud(this->owner());
+
+    //Check if models execute
     bool runDiagnostic = false;
+    List<bool> diagnosticsExecute(this->size(),false);
     forAll(*this, i)
     {
         if(this->operator[](i).shouldExecute()) {
-            runDiagnostic = true;
-            break;
+            diagnosticsExecute[i] = true;
+            runDiagnostic = true;//Found at least one...
         }
     }
+
     if(runDiagnostic)
     {
         forAllConstIter(typename CloudType, cloud, iter)//Go through all particles
@@ -130,14 +134,14 @@ void Foam::DiagnosticsList<CloudType>::info()
             const typename CloudType::parcelType& p = iter();
             forAll(*this, i)//Call gatherDiagnostic for all models in the list
             {
-                if(this->operator[](i).shouldExecute()/* || this->operator[](i).shouldWrite()*/)
+                if(diagnosticsExecute[i]/* || this->operator[](i).shouldWrite()*/)
                     this->operator[](i).gatherDiagnostic(p);
             }
         }
         //Print the info for all models
         forAll(*this, i)
         {
-            if(this->operator[](i).shouldExecute()) {
+            if(diagnosticsExecute[i]) {
                 this->operator[](i).info();
                 Info << "----" << endl;//flush
             }
