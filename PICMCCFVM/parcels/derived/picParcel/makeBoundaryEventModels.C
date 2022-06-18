@@ -29,6 +29,7 @@ License
 #include "TestReaction.H"
 #include "Sputter.H"
 #include "CountDeletions.H"
+#include "CountInsertions.H"
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
@@ -43,6 +44,8 @@ namespace Foam
     makeBoundaryEventType(TestReaction, CloudType);
     makeBoundaryEventType(SputterEvent, CloudType);
     makeBoundaryEventType(CountDeletions, CloudType);
+    makeBoundaryEventType(CountInsertions, CloudType);
+
 }
 
 
