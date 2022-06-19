@@ -194,10 +194,12 @@ void Foam::IdealCurrentSource<CloudType>::postUpdate_Boundary()
 {
     //Calculate the average voltage on the boundary
     scalar avgV = 0.0;
-    if(boundaryCondition_->size() > 0)//In parallel runs some processors might not have a part of the boundary
-        avgV = average(boundaryCondition_->patchInternalField());
-    reduce(avgV, maxOp<scalar>());
-    Info << "[" << typeName << "] average voltage: " << avgV << " V" << endl;
+    if(boundaryCondition_->size() > 0) { //In parallel runs some processors might not have a part of the boundary
+        const scalarField& faceAreas = boundaryCondition_->patch().magSf();
+        avgV = sum(faceAreas*boundaryCondition_->patchInternalField());
+    }
+    reduce(avgV, sumOp<scalar>());
+    Info << "[" << typeName << "] average voltage: " << avgV/cathodeArea_ << " V " << endl;
 }
 
 /*
