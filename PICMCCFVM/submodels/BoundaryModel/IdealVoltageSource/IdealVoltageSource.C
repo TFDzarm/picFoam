@@ -45,9 +45,16 @@ Foam::IdealVoltageSource<CloudType>::IdealVoltageSource
     BoundaryModel<CloudType>(dict, cloud, typeName,associatedPatches),
     interactionList_(),
     chargeAccumulator_(0.0),
+    chargeAccumulatorCathode_(0.0),
+    anodeAverage_(0.0),
+    cathodeAverage_(0.0),
+    averageStart_(cloud.mesh().time().value()),
     Qconv_(0.0),
     Qconv1_(0.0),
     Qconv2_(0.0),
+    QconvCathode_(0.0),
+    Qconv1Cathode_(0.0),
+    Qconv2Cathode_(0.0),
     emissionList_(this->coeffDict(),cloud)
 {
     //Get number of patches not counting processorPatches
@@ -129,20 +136,28 @@ void Foam::IdealVoltageSource<CloudType>::postUpdate_Boundary()
     scalar dt = mesh.time().deltaTValue();
 
     reduce(chargeAccumulator_, sumOp<scalar>());
+    reduce(chargeAccumulatorCathode_, sumOp<scalar>());
 
     //Charge that was accumulated previous timesteps
     Qconv2_ = Qconv1_;
     Qconv1_ = Qconv_;
-    Qconv_ -= (chargeAccumulator_);//account for E?
+    Qconv_ -= (chargeAccumulator_);
 
+    Qconv2Cathode_ = Qconv1Cathode_;
+    Qconv1Cathode_ = QconvCathode_;
+    QconvCathode_ -= (chargeAccumulatorCathode_);
 
     chargeAccumulator_ = 0.0;
+    chargeAccumulatorCathode_ = 0.0;
 
-    if(Qconv_== 0.0)
-        return;
+    //Calculate the running average of the current flowing through the circuit
+    scalar beta = dt/(mesh.time().value()-averageStart_);
 
-    //Calculate the current flowing through the circuit
-    Info << "[" << typeName << "] current: " << (2.0*(Qconv_-Qconv1_) + 0.5*(Qconv2_-Qconv_))/dt << " A" << endl;
+    anodeAverage_ = (1.0-beta)*anodeAverage_ + beta*((2.0*(Qconv_-Qconv1_) + 0.5*(Qconv2_-Qconv_))/dt);
+    cathodeAverage_ = (1.0-beta)*cathodeAverage_ + beta*((2.0*(QconvCathode_-Qconv1Cathode_) + 0.5*(Qconv2Cathode_-QconvCathode_))/dt);
+
+    Info << "[" << typeName << "] anode current: " << anodeAverage_ << " A" << nl
+         << "[" << typeName << "] cathode current: " << cathodeAverage_ << " A" << endl;
 }
 
 /*
@@ -161,9 +176,9 @@ void Foam::IdealVoltageSource<CloudType>::particleEjection(typename CloudType::p
 {
     //Have we ejected a charged particle? Subtract the charge...
     if(interactionList_[patchId] == etAnode)
-    {
         chargeAccumulator_ -= p.charge()*p.nParticle();
-    }
+    else if(interactionList_[patchId] == etCathode)
+        chargeAccumulatorCathode_ -= p.charge()*p.nParticle();
 }
 
 template<class CloudType>
@@ -179,6 +194,8 @@ bool Foam::IdealVoltageSource<CloudType>::particleBC(typename CloudType::parcelT
     {
         if(interactionList_[patchId] == etAnode)
             chargeAccumulator_ += charge;
+        else if(interactionList_[patchId] == etCathode)
+            chargeAccumulatorCathode_ += charge;
 
         p.wallAbsorption(cloud, td);
     }

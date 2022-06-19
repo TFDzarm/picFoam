@@ -68,12 +68,25 @@ class IdealVoltageSource
 
 
     //- Charge gathered during current timestep
-    scalar chargeAccumulator_;
+    scalar chargeAccumulator_;//on the anode
+    scalar chargeAccumulatorCathode_;//on the cathode
+
+    //Running averages
+    scalar anodeAverage_;
+    scalar cathodeAverage_;
+
+    //Start time for the running average
+    scalar averageStart_;
 
     //Sum of charge gathered
     scalar Qconv_;//current timestep
     scalar Qconv1_;//last timestep
     scalar Qconv2_;//timestep-2
+
+    //Sum of charge gathered on the cathode
+    scalar QconvCathode_;//current timestep
+    scalar Qconv1Cathode_;//last timestep
+    scalar Qconv2Cathode_;//timestep-2
 
     //- Emission models
     EmissionModelList<CloudType> emissionList_;
