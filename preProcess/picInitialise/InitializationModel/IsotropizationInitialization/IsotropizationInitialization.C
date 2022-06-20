@@ -101,7 +101,7 @@ void Foam::IsotropizationInitialization<CloudType>::initialiseParticles()
                 for (label pI = 0; pI < nParticlesToInsert; pI++)
                 {
                     point p = tet.randomPoint(cloud.rndGen());
-
+                    meshTools::constrainDirection(cloud.mesh(), cloud.mesh().solutionD(), p);
 
                     scalar Upara = Foam::sqrt(physicoChemical::k.value()*this->temperatures_[typeId]/(((2.0/3.0)*fraction+(1.0/3.0))*cP.mass()));
                     scalar Uperp = Foam::sqrt(physicoChemical::k.value()*this->temperatures_[typeId]/(((2.0/3.0)+(1.0/(3.0*fraction)))*cP.mass()));
