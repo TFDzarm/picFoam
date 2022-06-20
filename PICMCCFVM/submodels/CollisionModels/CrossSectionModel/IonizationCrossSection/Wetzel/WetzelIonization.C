@@ -41,7 +41,7 @@ Foam::WetzelIonizationCs<CloudType,Type>::WetzelIonizationCs
     CrossSectionModel<CloudType,Type>(cloud, associatedTypeId),
     ionizationCS_()
 {
-    Info << "WARNING the CrossSectionModel " << typeName << " is only valid for species of type argon!" << endl;
+    Info << "       |= WARNING the CrossSectionModel " << typeName << " is only valid for species of type argon!" << endl;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Ionization CrossSection
@@ -90,6 +90,8 @@ Foam::WetzelIonizationCs<CloudType,Type>::~WetzelIonizationCs()
 template<class CloudType, Foam::crossSectionType Type>
 Foam::scalar Foam::WetzelIonizationCs<CloudType,Type>::crossSection(scalar eVEnergy) const
 {
+    if( eVEnergy < 15.0 ) return 0.0;
+
     scalar Qi=0.0;
     scalar s = 38.21999573*::log(eVEnergy/15.0);
     if( s < 0.0 ) return 0.0;

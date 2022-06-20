@@ -41,7 +41,7 @@ Foam::RajuIonizationCS<CloudType,Type>::RajuIonizationCS
     CrossSectionModel<CloudType,Type>(cloud, associatedTypeId),
     ionizationCS_()
 {
-    Info << "WARNING the CrossSectionModel " << typeName << " is only valid for species of type argon!" << endl;
+    Info << "       |= WARNING the CrossSectionModel " << typeName << " is only valid for species of type argon!" << endl;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Ionization CrossSection
@@ -94,6 +94,9 @@ Foam::RajuIonizationCS<CloudType,Type>::~RajuIonizationCS()
 template<class CloudType, Foam::crossSectionType Type>
 Foam::scalar Foam::RajuIonizationCS<CloudType,Type>::crossSection(scalar eVEnergy) const
 {
+    if(eVEnergy == 0.0)
+        return 0.0;
+
     scalar Qi=0.0;
     scalar s = 23.94099455*::log(eVEnergy/16);
     if( s < 0.0 ) return 0.0;

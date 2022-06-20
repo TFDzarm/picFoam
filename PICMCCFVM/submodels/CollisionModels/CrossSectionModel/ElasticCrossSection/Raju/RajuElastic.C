@@ -42,7 +42,7 @@ Foam::RajuElasticCS<CloudType,Type>::RajuElasticCS
 
     elasticCS_()
 {
-    Info << "WARNING the CrossSectionModel " << typeName << " is only valid for species of type argon!" << endl;
+    Info << "       |= WARNING the CrossSectionModel " << typeName << " is only valid for species of type argon!" << endl;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Total and Elastic CrossSection
@@ -88,6 +88,9 @@ Foam::RajuElasticCS<CloudType,Type>::~RajuElasticCS()
 template<class CloudType, Foam::crossSectionType Type>
 Foam::scalar Foam::RajuElasticCS<CloudType,Type>::crossSection(scalar eVEnergy) const
 {
+    if(eVEnergy == 0.0)
+        return 0.0;
+
     scalar Qel=0.0;
     scalar s = 10.49453212*::log(eVEnergy/0.08);
     if( s < 0.0 ) return 0.0;
