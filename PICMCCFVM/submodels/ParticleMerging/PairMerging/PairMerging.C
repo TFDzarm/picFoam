@@ -44,7 +44,8 @@ Foam::PairMerging<CloudType>::PairMerging
     velocityRatio_(readScalar(this->coeffDict().lookup("velocityRatio"))),
     cumulativeKinEnergyError_(0.0),
     mergeSpecies_(),
-    nParticleDev_(this->coeffDict().lookup("nDeviation"))
+    nParticleDev_(this->coeffDict().lookup("nDeviation")),
+    mergeMaximumPerCell_(readLabel(this->coeffDict().lookup("mergeMaximumPerCell")))
 {
     //Settings mismatch?
     if((cellParcelMax_*reductionFactor_) < nCheckNeighbors_)
@@ -67,8 +68,7 @@ Foam::PairMerging<CloudType>::PairMerging
         mS.append(typeId);
     }
     mergeSpecies_.transfer(mS);
-
-    Warning << "Particle merging is untested. Use with caution!" << endl;
+    //Warning << "Particle merging is untested. Use with caution!" << endl;
 }
 
 
@@ -107,6 +107,8 @@ void Foam::PairMerging<CloudType>::mergeParticles()
                 if(N > cellParcelMax_)//Check condition for merging
                 {
                     label nTarget = N*reductionFactor_;//Try to reduce to this number
+                    if(N-nTarget > mergeMaximumPerCell_)
+                        nTarget = N - mergeMaximumPerCell_;
 
                     //Create a list of the magnitude of velocities for every particle in this cell
                     List<scalar> mergeVelocities(N);

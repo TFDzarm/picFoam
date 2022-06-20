@@ -83,6 +83,9 @@ class PairMerging
 
     //- Maximum nParticles deviation
     List<scalar> nParticleDev_;
+
+    //- Do not merge more particles per cell than this number
+    label mergeMaximumPerCell_;
 public:
 
     //- Runtime type information
