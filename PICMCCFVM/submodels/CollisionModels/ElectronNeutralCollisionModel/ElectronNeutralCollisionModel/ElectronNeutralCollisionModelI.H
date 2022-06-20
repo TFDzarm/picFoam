@@ -36,9 +36,15 @@ inline const bool& Foam::ElectronNeutralCollisionModel<CloudType>::updateNeutral
 }
 
 template<class CloudType>
-inline const bool& Foam::ElectronNeutralCollisionModel<CloudType>::createIonElectronPair() const
+inline const bool& Foam::ElectronNeutralCollisionModel<CloudType>::createIon() const
 {
-    return createIonElectronPair_;
+    return createIon_;
+}
+
+template<class CloudType>
+inline const bool& Foam::ElectronNeutralCollisionModel<CloudType>::createElectron() const
+{
+    return createElectron_;
 }
 
 template<class CloudType>

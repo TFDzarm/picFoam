@@ -111,7 +111,8 @@ Foam::ElectronNeutralCollisionModel<CloudType>::ElectronNeutralCollisionModel(Cl
        dimensionedScalar("zero", dimless, 0.0),
        calculatedFvPatchScalarField::typeName
    ),
-   createIonElectronPair_(true)
+   createElectron_(true),
+   createIon_(true)
 {}
 
 
@@ -221,7 +222,8 @@ Foam::ElectronNeutralCollisionModel<CloudType>::ElectronNeutralCollisionModel
       dimensionedScalar("zero",  dimless, 0.0),
       calculatedFvPatchScalarField::typeName
   ),
-  createIonElectronPair_(coeffDict_.lookupOrDefault("createIonElectronPair",true))
+  createElectron_(coeffDict_.lookupOrDefault("createElectron",true)),
+  createIon_(coeffDict_.lookupOrDefault("createIon",true))
 {
     //Create a scalarField per neutral species  for sigmaTcRMax and the collision remainder
     const List<label>& neutralSpecies(owner.neutralSpecies());
@@ -613,7 +615,7 @@ bool Foam::ElectronNeutralCollisionModel<CloudType>::ionizationCollision(scalar 
 
     //Only create the ion with a propability of wE/wN and if the option createIonElectronPair() is set to true
     scalar rndU = cloud.rndGen().scalar01();
-    if(rndU <= wEwN && createIonElectronPair()) {
+    if(rndU <= wEwN && createIon()) {
         typename CloudType::parcelType* pIon = cloud.addNewParcel(pN->position(),pN->cell(),pN->U(),cloud.ionTypeId(pN->typeId()));//copy already scatted neutral
         pIon->nParticle() = wN;//set weight of new ion to that of the neutral
         state = true;
@@ -624,7 +626,7 @@ bool Foam::ElectronNeutralCollisionModel<CloudType>::ionizationCollision(scalar 
     }
 
     //Only create the new electron with a propability of wE/wN and if the option createIonElectronPair() is set to true
-    if(rndU <= wEwN && createIonElectronPair()) {
+    if(rndU <= wEwN && createElectron()) {
         typename CloudType::parcelType* pEnew = cloud.addNewParcel(pE->position(),pE->cell(), \
                         (preUe/mag(preUe))*::sqrt(2.0*Ep*constant::electromagnetic::e.value()/massE),pE->typeId());//tildvp
         pEnew->nParticle() = wN;//set weight of new electron to that of the neutral
@@ -677,7 +679,7 @@ bool Foam::ElectronNeutralCollisionModel<CloudType>::ionizationCollision(scalar 
 
     //Only create the ion with a propability of wE/wN and if the option createIonElectronPair() is set to true
     scalar rndU = cloud.rndGen().scalar01();
-    if(rndU <= wEwN && createIonElectronPair()) {
+    if(rndU <= wEwN && createIon()) {
         typename CloudType::parcelType* pIon = cloud.addNewParcel(pE->position(),celli,Un,cloud.ionTypeId(typeId));//copy already scatted neutral
         pIon->nParticle() = backgroundGas.nParticle();//set weight of new ion to that of the neutral
         state = true;
@@ -688,7 +690,7 @@ bool Foam::ElectronNeutralCollisionModel<CloudType>::ionizationCollision(scalar 
     }
 
     //Only create the new electron with a propability of wE/wN and if the option createIonElectronPair() is set to true
-    if(rndU <= wEwN && createIonElectronPair()) {
+    if(rndU <= wEwN && createElectron()) {
         typename CloudType::parcelType* pEnew = cloud.addNewParcel(pE->position(),celli, \
                         (preUe/mag(preUe))*::sqrt(2.0*Ep*constant::electromagnetic::e.value()/massE),pE->typeId());//tildvp
         pEnew->nParticle() = backgroundGas.nParticle();//set weight of new electron to that of the neutral

@@ -108,8 +108,9 @@ class ElectronNeutralCollisionModel
         volScalarField excitationCollisions_;
         volScalarField ionizationCollisions_;
 
-        //- Do we create the new ion-electron pair during ionization? (def: true)
-        bool createIonElectronPair_;
+        //- Do we create the new ion or electron during ionization? (def: true)
+        bool createElectron_;
+        bool createIon_;
 public:
 
     //- Runtime type information
@@ -175,8 +176,9 @@ public:
         //- Return whether to update the neutrals velocity during collision or not
         inline const bool& updateNeutralVelocity() const;
 
-        //- Return whether to create the new ion-electron pair or not
-        inline const bool& createIonElectronPair() const;
+        //- Return whether to create the new ion/electron or not
+        inline const bool& createIon() const;
+        inline const bool& createElectron() const;
 
         //- Return PointerList of elastic cross section models
         inline const CrossSectionList<CloudType,crossSectionType::ElectronElasticCS>&
