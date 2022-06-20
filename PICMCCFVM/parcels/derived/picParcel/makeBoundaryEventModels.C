@@ -30,6 +30,7 @@ License
 #include "Sputter.H"
 #include "CountDeletions.H"
 #include "CountInsertions.H"
+#include "Current.H"
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
@@ -45,7 +46,7 @@ namespace Foam
     makeBoundaryEventType(SputterEvent, CloudType);
     makeBoundaryEventType(CountDeletions, CloudType);
     makeBoundaryEventType(CountInsertions, CloudType);
-
+    makeBoundaryEventType(Current, CloudType);
 }
 
 
