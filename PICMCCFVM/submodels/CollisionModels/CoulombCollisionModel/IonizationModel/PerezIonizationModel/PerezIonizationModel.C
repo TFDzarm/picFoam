@@ -377,27 +377,8 @@ bool Foam::PerezIonizationModel<CloudType>::ionize()
         electron_ = nullptr;
         return false;
     }
-    if(ionizationData_[parcelTypeId].neutralSpecies_ == parcelTypeId) // FIXME: Is this used??!! This code is not used for neutral ionization!
-    {
-        label ionSpecies = ionizationData_[parcelTypeId].ionSpecies_;
-        typename CloudType::parcelType* newIon = this->owner().addNewParcel(parcel_->position(),parcel_->cell(),parcel_->U(),ionSpecies);
-        newIon->nParticle() = parcel_->nParticle();
 
-        newIon->chargeModifier() = (parcel_->chargeModifier()-1);
-        newIon->charge() = this->owner().constProps(ionSpecies).charge()*newIon->chargeModifier();
-
-        //do not forget to update any lists after this ... return true marks the deletion if parcel was a neutral species!!!
-
-        //update is done in ::collisions()
-        /*
-        typename DynamicList<ParcelType*>::iterator iter = neutralCellParcels.begin()+candidateP;
-        neutralCellParcels.erase(iter);
-        this->deleteParticle(parcelP);
-        nNC = neutralCellParcels.size();
-        */
-    }
-    else
-        parcel_->charge() = this->owner().constProps(parcelTypeId).charge()*parcel_->chargeModifier();//update charge of the ion!!!
+    parcel_->charge() = this->owner().constProps(parcelTypeId).charge()*parcel_->chargeModifier();//update charge of the ion!!!
 
 
     // end reset vars
