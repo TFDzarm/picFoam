@@ -219,7 +219,7 @@ template<class ParcelType>
 template<class TrackCloudType>
 void Foam::PICParcel<ParcelType>::syncVelocityAtBoundary(TrackCloudType& cloud, scalar fraction)
 {
-    if(cloud.syncVelocityAtBoundary())
+    if(cloud.syncVelocityAtBoundary() && charge_ != 0.0)//Syncing makes only sense for charged species, thus we save some instructions if we check the charge.
     {
         scalar syncDT = fraction*cloud.mesh().time().deltaTValue();
         cloud.particlePusher().updateVelocity(*this, syncDT);
