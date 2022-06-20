@@ -35,6 +35,7 @@ License
 #include "DumpInfo.H"
 #include "VelocityInfo.H"
 #include "UnidirectionalVelocityInfo.H"
+#include "ChargeInfo.H"
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
@@ -55,6 +56,7 @@ namespace Foam
     makeDiagnosticInfoType(DumpInfo, CloudType);
     makeDiagnosticInfoType(VelocityInfo, CloudType);
     makeDiagnosticInfoType(UnidirectionalVelocityInfo, CloudType);
+    makeDiagnosticInfoType(ChargeInfo, CloudType);
 }
 
 // ************************************************************************* //
