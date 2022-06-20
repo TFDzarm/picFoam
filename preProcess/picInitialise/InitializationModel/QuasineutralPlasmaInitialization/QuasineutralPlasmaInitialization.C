@@ -57,9 +57,11 @@ Foam::QuasineutralPlasmaInitialization<CloudType>::QuasineutralPlasmaInitializat
     if((iCharge + eCharge) != 0.0)
         FatalErrorInFunction << "Model expects the ion and electron charge to be of same magnitude and opposite signs" << abort(FatalError);
 
-    cellCount_ = readLabel(this->coeffDict().lookup("cellCount"));
-    cellCount_[ionTypeId_] /= cloud.constProps()[ionTypeId_].nParticle();
-    cellCount_[cloud.electronTypeId()] /= cloud.constProps()[cloud.electronTypeId()].nParticle();
+    scalar cc = readScalar(this->coeffDict().lookup("cellCount"));
+    scalar Ni = cc / cloud.constProps()[ionTypeId_].nParticle();
+    cellCount_[ionTypeId_] = static_cast<label>(Ni);
+    scalar Ne = cc / cloud.constProps()[cloud.electronTypeId()].nParticle();
+    cellCount_[cloud.electronTypeId()] = static_cast<label>(Ne);
 
     Info << "Parcels ion: " << cellCount_[ionTypeId_] << nl
          << "Parcels electron: " << cellCount_[cloud.electronTypeId()] << endl;
