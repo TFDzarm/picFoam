@@ -115,6 +115,9 @@ void Foam::UniformInitialization<CloudType>::initialiseParticles()
                     );
 
                     label cellofPos = mesh.findCell(displacedP);
+                    if(cellofPos < 0)
+                        FatalErrorInFunction << "Tried to create particle outside of mesh " << displacedP << nl << abort(FatalError);
+
                     cloud.addNewParcel(displacedP, cellofPos, U, typeId);
 
                 }
