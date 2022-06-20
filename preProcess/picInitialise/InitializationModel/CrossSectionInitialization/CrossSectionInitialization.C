@@ -46,10 +46,10 @@ Foam::CrossSectionInitialization<CloudType>::CrossSectionInitialization
     if(!iCM) {
         FatalErrorInFunction << "initalizeCollisionModels has to be set to true" << abort(FatalError);
     }
-    if(!sME) {
+    if(sME) {
         FatalErrorInFunction << "solveMaxwellEquations has to be set to false" << abort(FatalError);
     }
-    if(!iLF) {
+    if(iLF) {
         FatalErrorInFunction << "initalizeLeapFrog has to be set to false" << abort(FatalError);
     }
 }
