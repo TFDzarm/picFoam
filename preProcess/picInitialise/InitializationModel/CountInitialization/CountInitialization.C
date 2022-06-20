@@ -194,31 +194,63 @@ void Foam::CountInitialization<CloudType>::initialiseParticles()
         cloud.constProps(typeId);
 
         label rem = countList[typeId]-insertedCount[typeId];
-        for(int i = 0; i < rem; i++)
+
+        //Too many parcels were added
+        if(rem < 0)
         {
-            label rndCellI = rndGen.sampleAB<label>(0,mesh.cells().size());
-            List<tetIndices> cellTets = polyMeshTetDecomposition::cellTetIndices
-            (
-                mesh,
-                rndCellI
-            );
-            label rndTetI = rndGen.sampleAB<label>(0,cellTets.size());
-            const tetIndices& cellTetIs = cellTets[rndTetI];
-            tetPointRef tet = cellTetIs.tet(cloud.mesh());
+            //There's probably a better way of doing this... Goal is to go through all particles only once!
+            DynamicList<label> rmIndex;
+            while(rmIndex.size() < -rem)
+            {
+                //Lookup rnd indexes of parcles to remove
+                label rndIndex = rndGen.sampleAB(0,cloud.size());
+                bool found = false;
+                forAll(rmIndex,i)//Only add them if their not already in the list
+                {
+                    if(rmIndex[i] == rndIndex)
+                        found = true;
+                }
+                if(!found)
+                    rmIndex.append(rndIndex);
+            }
+            sort(rmIndex);//Sort so we do not have to loop through every time...
+            label i = 0;
+            label j = 0;
+            forAllIter(typename CloudType, cloud, iter)
+            {
+                if(i == rmIndex[j])//If we are at the index remove the parcel
+                {
+                    cloud.deleteParticle(iter());
+                    j++;
+                }
+                i++;
+            }
+        } else {
+            for(int i = 0; i < rem; i++)
+            {
+                label rndCellI = rndGen.sampleAB<label>(0,mesh.cells().size());
+                List<tetIndices> cellTets = polyMeshTetDecomposition::cellTetIndices
+                (
+                    mesh,
+                    rndCellI
+                );
+                label rndTetI = rndGen.sampleAB<label>(0,cellTets.size());
+                const tetIndices& cellTetIs = cellTets[rndTetI];
+                tetPointRef tet = cellTetIs.tet(cloud.mesh());
 
-            point p = tet.randomPoint(rndGen);
-            meshTools::constrainDirection(cloud.mesh(), cloud.mesh().solutionD(), p);
+                point p = tet.randomPoint(rndGen);
+                meshTools::constrainDirection(cloud.mesh(), cloud.mesh().solutionD(), p);
 
-            vector U = cloud.equipartitionLinearVelocity
-            (
-                this->temperatures_[typeId],
-                cP.mass()
-            );
+                vector U = cloud.equipartitionLinearVelocity
+                (
+                    this->temperatures_[typeId],
+                    cP.mass()
+                );
 
-            U += velocity;
+                U += velocity;
 
-            cloud.addNewParcel(p, rndCellI, U, typeId);
-
+                cloud.addNewParcel(p, rndCellI, U, typeId);
+            }
         }
     }
 }
