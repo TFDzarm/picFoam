@@ -32,7 +32,6 @@ Foam::InitializationModel<CloudType>::InitializationModel(const dictionary& dict
     dict_(dict),
     cloud_(owner),
     coeffDict_(dictionary::null),
-    cellZoneIndex_(-1),
     numberDensities_(owner.typeIdList().size(),0.0),
     temperatures_(owner.typeIdList().size(),0.0)
 {
@@ -50,14 +49,9 @@ Foam::InitializationModel<CloudType>::InitializationModel
     dict_(dict),
     cloud_(owner),
     coeffDict_(dict.subDict(type + "Coeffs")),
-    cellZoneIndex_(-1),
     numberDensities_(owner.typeIdList().size(),0.0),
     temperatures_(owner.typeIdList().size(),0.0)
-{
-    word cellZone = coeffDict_.lookupOrDefault<word>("cellZone","none");
-    if(cellZone != "none")
-        cellZoneIndex_ = owner.mesh().cellZones().findIndex(cellZone);
-}
+{}
 
 
 template<class CloudType>
@@ -178,12 +172,6 @@ template<class CloudType>
 const Field<scalar>& Foam::InitializationModel<CloudType>::temperatures() const
 {
     return temperatures_;
-}
-
-template<class CloudType>
-const Foam::label& Foam::InitializationModel<CloudType>::cellZone() const
-{
-    return cellZoneIndex_;
 }
 
 #include "InitializationModelNew.C"

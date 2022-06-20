@@ -47,6 +47,8 @@ class EquipartitionInitialization
 :
     public InitializationModel<CloudType>
 {
+    //- Index of the cell zone we wish to initalize in
+    label cellZoneIndex_;
 public:
 
     //- Runtime type information
@@ -74,6 +76,9 @@ public:
 
         //- Add particle called in initialiseParticles()
         void addParticles(label celli, const vector& velocity);
+
+        //- Return cell zone id
+        inline const label& cellZoneIndex() const;
 };
 
 

@@ -52,8 +52,6 @@ class InitializationModel
     //- The coefficients dictionary
     const dictionary coeffDict_;
 
-    //- Index of the cell zone we wish to initalize in
-    label cellZoneIndex_;
 protected:
 
     //- Number densities (set or calculated)
@@ -140,9 +138,6 @@ public:
 
         //- Return const temperature
         inline const Field<scalar>& temperatures() const;
-
-        //- Return cell zone id
-        inline const label& cellZone() const;
 
         //- Function to read number density and temperature if needed
         void readDefaultSettings();

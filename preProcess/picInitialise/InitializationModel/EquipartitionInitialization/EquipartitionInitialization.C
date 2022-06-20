@@ -38,8 +38,22 @@ Foam::EquipartitionInitialization<CloudType>::EquipartitionInitialization
     CloudType& cloud
 )
 :
-    InitializationModel<CloudType>(dict, cloud, typeName)
-{}
+    InitializationModel<CloudType>(dict, cloud, typeName),
+    cellZoneIndex_(-1)
+{
+    const fvMesh& mesh(cloud.mesh());
+    const dictionary& coeffDict = this->coeffDict();
+
+    word cellZone = coeffDict.lookupOrDefault<word>("cellZone","none");
+    if(cellZone != "none") {
+        cellZoneIndex_ = mesh.cellZones().findIndex(cellZone);
+
+        if(cellZoneIndex_ < 0)
+            FatalErrorInFunction << "Cannot find cellzone \"" << cellZone << "\"" << nl << abort(FatalError);
+
+        Info << "Initializing in cellZone " << cellZone << endl;
+    }
+}
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
@@ -56,12 +70,12 @@ void Foam::EquipartitionInitialization<CloudType>::initialiseParticles()
 
     const vector velocity(this->coeffDict().lookup("velocity"));
 
-    if(this->cellZone() > -1)
+    if(cellZoneIndex() >= 0)
     {
-        const cellZone& cz = cloud.mesh().cellZones()[this->cellZone()];
-        forAll(cz,i)
+        const labelList& cellLables = cloud.mesh().cellZones()[cellZoneIndex()];
+        forAll(cellLables,i)
         {
-            label celli = cz[i];
+            label celli = cellLables[i];
             addParticles(celli, velocity);
         }
     }
@@ -132,6 +146,12 @@ void Foam::EquipartitionInitialization<CloudType>::addParticles(label celli, con
             }
         }
     }
+}
+
+template<class CloudType>
+const Foam::label& Foam::EquipartitionInitialization<CloudType>::cellZoneIndex() const
+{
+    return cellZoneIndex_;
 }
 
 // ************************************************************************* //
