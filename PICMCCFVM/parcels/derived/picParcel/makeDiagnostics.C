@@ -37,6 +37,7 @@ License
 #include "UnidirectionalVelocityInfo.H"
 #include "ChargeInfo.H"
 #include "CellOccupancyInfo.H"
+#include "IsotropizationInfo.H"
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
@@ -59,6 +60,7 @@ namespace Foam
     makeDiagnosticInfoType(UnidirectionalVelocityInfo, CloudType);
     makeDiagnosticInfoType(ChargeInfo, CloudType);
     makeDiagnosticInfoType(CellOccupancyInfo, CloudType);
+    makeDiagnosticInfoType(IsotropizationInfo, CloudType);
 }
 
 // ************************************************************************* //
