@@ -34,6 +34,7 @@ License
 #include "PrintParcelInfo.H"
 #include "DumpInfo.H"
 #include "VelocityInfo.H"
+#include "UnidirectionalVelocityInfo.H"
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
@@ -53,6 +54,7 @@ namespace Foam
     makeDiagnosticInfoType(PrintParcelInfo, CloudType);
     makeDiagnosticInfoType(DumpInfo, CloudType);
     makeDiagnosticInfoType(VelocityInfo, CloudType);
+    makeDiagnosticInfoType(UnidirectionalVelocityInfo, CloudType);
 }
 
 // ************************************************************************* //
