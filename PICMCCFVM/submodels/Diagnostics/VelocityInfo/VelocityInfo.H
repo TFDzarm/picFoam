@@ -56,10 +56,6 @@ class VelocityInfo :
     //- Number of particles for each species
     List<scalar> nParticleTypes_;
 
-    //- v_perp
-    Switch calculateVperp_;
-    List<scalar> vperp_;
-
 public:
 
     //- Runtime type information
