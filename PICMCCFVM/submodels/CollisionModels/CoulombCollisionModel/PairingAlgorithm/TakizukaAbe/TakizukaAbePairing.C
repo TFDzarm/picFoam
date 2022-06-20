@@ -74,11 +74,14 @@ void Foam::TakizukaAbePairing<CloudType>::pairANDcollide()
 
     label coulombCollisions = 0;
     label ionizations = 0;
+    scalar average_DebyeLength = 0.0;
     forAll(sortedCellOccupancy, celli)// Go through all cells
     {
         scalar debyeLength = 0.0;
-        if(this->coulombCollisionModel().calculateDebyeLength())
+        if(this->coulombCollisionModel().calculateDebyeLength()) {
             debyeLength = this->coulombCollisionModel().debyeLength(celli);
+            average_DebyeLength += debyeLength;
+        }
 
         forAll(chargedSpecies,i)//Species 1
         {
@@ -312,10 +315,18 @@ void Foam::TakizukaAbePairing<CloudType>::pairANDcollide()
 
     reduce(coulombCollisions, sumOp<label>());
     reduce(ionizations, sumOp<label>());
+    reduce(average_DebyeLength, sumOp<scalar>());
+    reduce(this->coulombCollisionModel().average_impactParameter(), sumOp<scalar>());
+    reduce(this->coulombCollisionModel().average_coulombLog(), sumOp<scalar>());
     Info << "    Coulomb Collisions              = " << coulombCollisions << nl
-         << "    Ionizations                     = " << ionizations << nl << endl;
+         << "    Ionizations                     = " << ionizations << nl
+         << "    Average Debye length            = " << average_DebyeLength/this->nCellsGlobal() << nl
+         << "    Average b0                      = " << this->coulombCollisionModel().average_impactParameter()/coulombCollisions << nl
+         << "    Average Coulomb logarithm       = " << this->coulombCollisionModel().average_coulombLog()/coulombCollisions << nl << endl;
 
-
+    //Reset
+    this->coulombCollisionModel().average_coulombLog() = 0.0;
+    this->coulombCollisionModel().average_impactParameter() = 0.0;
 }
 
 

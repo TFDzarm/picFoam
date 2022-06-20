@@ -93,17 +93,24 @@ void Foam::NanbuCollision<CloudType>::collide
     vector g = UP-UQ;
     scalar g_mag = mag(g);
 
-    //Impact parameter
-    scalar b0 = chargeP*chargeQ/(2.0*cm::pi*ce::epsilon0.value()*reMass*g_mag*g_mag);
-    scalar b_min = max(cu::h.value()/(2.0*(g_mag*reMass)),mag(b0));//Perez et al.: de-Broglie wavelength or b0 (Nanbu97)
-
-
     //Get the coulomb log
     scalar coulombLog;
-    if(this->coulombLog_[typeIdP][typeIdQ] == 0.0)
-        coulombLog = max(2.0,0.5*::log(1.0+::pow(debyeLength,2)/::pow(b_min,2)));//FIXME: performance
+    if(this->coulombLog_[typeIdP][typeIdQ] == 0.0) {
+
+        //Impact parameter
+        scalar b0 = chargeP*chargeQ/(2.0*cm::pi*ce::epsilon0.value()*reMass*g_mag*g_mag);
+
+        if(this->calculate_bmin_)
+           b0 = max(cu::h.value()/(2.0*(g_mag*reMass)),mag(b0));// Perez et al.: de-Broglie wavelength or b0 (Nanbu97)
+
+        this->average_impactParameter() += b0;
+        //Nanbu: coulombLog = max(2.0,::log(debyeLength/mag(b0))); Perez: max(2.0,0.5*::log(1.0+::pow(debyeLength,2)/::pow(b_min,2)))
+        coulombLog = max(2.0,0.5*::log(1.0+sqr(debyeLength)/sqr(b0)));
+    }
     else
         coulombLog = this->coulombLog_[typeIdP][typeIdQ];
+
+    this->average_coulombLog() += coulombLog;
 
     //Calculate the scattering angles
     scalar s = coulombLog/(4.0*cm::pi) * ::pow(chargeP*chargeQ/(ce::epsilon0.value()*reMass),2)*(nQ*nP/nPQ)*::pow(g_mag,-3.0)*deltaT;

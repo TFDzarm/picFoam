@@ -41,7 +41,12 @@ Foam::CoulombCollisionModel<CloudType>::CoulombCollisionModel(CloudType& owner)
     allowIntraCollision_(true),
     calculateDebyeLength_(true),
     weightCorrection_(),
-    coulombLog_()
+    coulombLog_(),
+    average_coulombLog_(0.0),
+    debyeLength_accountForDrift_(true),
+    debyeLength_Species_(),
+    average_b_(0.0),
+    calculate_bmin_(true)
 {}
 
 
@@ -83,10 +88,59 @@ Foam::CoulombCollisionModel<CloudType>::CoulombCollisionModel
             owner
         )
     ),
-    coulombLog_()
+    coulombLog_(),
+    average_coulombLog_(0.0),
+    debyeLength_accountForDrift_(true),
+    debyeLength_Species_(),
+    average_b_(0.0),
+    calculate_bmin_(true)
 {
-    label nSpecies = owner.typeIdList().size();
 
+    //Check if a DebyeLength subDict was provided and if it contains a species list
+    const dictionary& debyeLengthdict = coeffDict_.subOrEmptyDict("DebyeLength");
+    wordList debyeWordList = debyeLengthdict.lookupOrDefault("species",wordList::null());
+    if(debyeWordList.empty())//If not consider all species for the calculation of the Debye length
+    {
+        Info << "|->    Consider all charged species in the calculation of the debye length." << endl;
+        List<label> copy = owner.chargedSpecies().clone();
+        debyeLength_Species_.transfer(copy);
+    }
+    else//Else only consider species given in the list
+    {
+        Info << "|->    Only consider species in list " << debyeWordList << " in the calculation of the Debye length." << endl;
+
+        DynamicList<label> debyeLength_Species;
+        forAll(debyeWordList,i)
+        {
+            word species = debyeWordList[i];
+            label typeId = findIndex(owner.typeIdList(),species);
+
+            if(typeId < 0)
+                FatalErrorInFunction << "Unable to find the species " << species << nl << abort(FatalError);
+
+            if(owner.constProps(typeId).charge() == 0.0)
+                FatalErrorInFunction << "Species " << species << " considered for calculation of the Debye length is not a particle with charge" << nl << abort(FatalError);
+
+            debyeLength_Species.append(typeId);
+        }
+        debyeLength_Species_.transfer(debyeLength_Species);
+    }
+
+    //Check if we consider bmin in the Coulomb log calculation else use default value true
+    calculate_bmin_.readIfPresent("calculate_bmin",debyeLengthdict);
+    if(calculate_bmin_)
+        Info << "|->    Consider bmin in Coulomb logarithm calculation" << endl;
+    else
+        Info << "|->    Ignore bmin in Coulomb logarithm calculation" << endl;
+
+    //Check if we calculate the species temperatures while accounting for the drift velocity
+    debyeLength_accountForDrift_.readIfPresent("accountForDrift",debyeLengthdict);
+    if(debyeLength_accountForDrift_)
+        Info << "|->    Do not incorporate dirft velocities in Debye length calculation" << endl;
+    else
+        Info << "|->    Incorporate the drift velocities in Debye length calculation" << endl;
+
+    label nSpecies = owner.typeIdList().size();
     //Simply save the coulomb logarithm twice ignoring the order
     coulombLog_.setSize(nSpecies,List<scalar>(nSpecies,0.0));
 
@@ -105,6 +159,10 @@ Foam::CoulombCollisionModel<CloudType>::CoulombCollisionModel
                 FatalErrorInFunction << "Group of collisionPartners contains more than two species" << nl << cP << abort(FatalError);
             label p1 = findIndex(owner.typeIdList(),cP[0]);
             label p2 = findIndex(owner.typeIdList(),cP[1]);
+
+            if(p1 < 0 || p2 < 0)
+                FatalErrorInFunction << "Unable to find the typeId of one or both species in pair (" << cP[0] << " " << cP[1] << ")" << nl << abort(FatalError);
+
             scalar cLog = readScalar(subDict.lookup("coulombLog"));
             if(coulombLog_[p1][p2] != 0 && coulombLog_[p1][p2] != cLog)
             {
@@ -183,18 +241,19 @@ scalar Foam::CoulombCollisionModel<CloudType>::debyeLength(label celli)
     scalar debyeLength = 0.0;
     scalar debye(0.0), n_max(0.0);
 
-    //Go through all charged species
-    forAll(cloud.chargedSpecies(),si)
+    //Go through all considered species
+    forAll(debyeLength_Species_,si)
     {
         scalar T(0.0), n(0.0);
-        label speci = cloud.chargedSpecies()[si];
+        label speci = debyeLength_Species_[si];
         scalar mass = cloud.constProps(speci).mass();
 
         n = 0.0;
 
         scalar charge = 0.0;
         scalar vSqr(0.0);
-        //vector v = Zero;
+        vector v = Zero;
+        scalar vDrift2 = 0.0;
 
         //Calculate average properties
         forAll(cloud.sortedCellOccupancy()[celli][speci],parti)
@@ -202,13 +261,13 @@ scalar Foam::CoulombCollisionModel<CloudType>::debyeLength(label celli)
             typename CloudType::parcelType* p = cloud.sortedCellOccupancy()[celli][speci][parti];
             vSqr += (p->U() & p->U())*p->nParticle();
             charge += p->charge()*p->nParticle();
-            //v += p->U()*p->nParticle();
+            v += p->U()*p->nParticle();
             n += p->nParticle();
         }
 
         if(n <= 0.0)
             continue;
-        //v /= n;
+        v /= n;
         charge /= n;//avg charge
         vSqr /= n;//avg vSqr
         n /= cloud.mesh().cellVolumes()[celli];//number density
@@ -216,8 +275,11 @@ scalar Foam::CoulombCollisionModel<CloudType>::debyeLength(label celli)
         if(n > n_max)
             n_max = n;
 
-        //Temperatur according to Nanbu assumes Maxwaillian distribution (we ignore drift velocity this prevent error at low parcel counts)
-        T = mass/(3.0*constant::physicoChemical::k.value())*(vSqr/*-(v&v)*/);
+        if(debyeLength_accountForDrift_)//Do we add the drift velocity?
+            vDrift2 = (v&v);
+
+        //Temperatur according to Nanbu assumes Maxwaillian distribution
+        T = mass/(3.0*constant::physicoChemical::k.value())*(vSqr-vDrift2);
 
         if(T <= 0.0)
             continue;

@@ -127,16 +127,20 @@ void Foam::PerezRelativisticCollision<CloudType>::collide
     //Calculate or get the coulomb log
     scalar coulombLog;
     if(this->coulombLog_[idP][idQ] == 0.0) {
+
         //Impact parameter
         scalar b0 = chargeP*chargeQ/(4.0*cm::pi*ce::epsilon0.value()*sqr(cu::c.value()))*gamma_c/(massP*gammaP+massQ*gammaQ)*(1.0+massP*gammaP_CoM*massQ*gammaQ_CoM*sqr(cu::c.value())/sqr(mag_pP_CoM));
 
-        scalar b_min = max(constant::universal::h.value()/(2*mag_pP_CoM),mag(b0));//choose minimum: de-Broglie wavelength or b0
+        if(this->calculate_bmin_)
+            b0 = max(constant::universal::h.value()/(2*mag_pP_CoM),mag(b0));//de-Broglie wavelength b_min or b0
 
-        coulombLog = max(2.0,0.5*log(1.0+sqr(debyeLength)/sqr(b_min)));//FIXME: Performance !!!! this one only needs to calculated per cell -> move me !!!
+        this->average_impactParameter() += b0;
+        coulombLog = max(2.0,0.5*log(1.0+sqr(debyeLength)/sqr(b0)));
     }
     else
         coulombLog = this->coulombLog_[idP][idQ];
 
+    this->average_coulombLog() += coulombLog;
 
     scalar s_term1 = gamma_c*mag_pP_CoM/(massP*gammaP+massQ*gammaQ);
     scalar s_term2 = sqr(1.0+massP*gammaP_CoM*massQ*gammaQ_CoM*sqr(cu::c.value())/sqr(mag_pP_CoM));

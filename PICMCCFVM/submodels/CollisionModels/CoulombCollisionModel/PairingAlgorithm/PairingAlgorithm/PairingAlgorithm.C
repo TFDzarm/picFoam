@@ -33,9 +33,12 @@ Foam::PairingAlgorithm<CloudType>::PairingAlgorithm(CloudType& cloud, CoulombCol
 :
     dict_(dictionary::null),
     cloud_(cloud),
-	coulombCollisionModel_(collisionModel),
-    coeffDict_(dictionary::null)
-{}
+    coulombCollisionModel_(collisionModel),
+    coeffDict_(dictionary::null),
+    nCells_(cloud.mesh().nCells())
+{
+    reduce(nCells_, sumOp<label>());
+}
 
 
 template<class CloudType>
@@ -43,16 +46,17 @@ Foam::PairingAlgorithm<CloudType>::PairingAlgorithm
 (
     const dictionary& dict,
     CloudType& cloud,
-	CoulombCollisionModel<CloudType>& collisionModel,
+    CoulombCollisionModel<CloudType>& collisionModel,
     const word& type
 )
 :
     dict_(dict),
     cloud_(cloud),
     coulombCollisionModel_(collisionModel),
-    coeffDict_(dict.subOrEmptyDict(type + "Coeffs"))
+    coeffDict_(dict.subOrEmptyDict(type + "Coeffs")),
+    nCells_(cloud.mesh().nCells())
 {
-
+    reduce(nCells_, sumOp<label>());
 }
 
 

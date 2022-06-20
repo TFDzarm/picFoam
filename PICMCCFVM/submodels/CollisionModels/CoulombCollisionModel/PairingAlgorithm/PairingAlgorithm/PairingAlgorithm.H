@@ -67,6 +67,9 @@ class PairingAlgorithm
 
         //- The coefficients dictionary
         const dictionary coeffDict_;
+
+        //- Keep track of the global cell count, we require it for the Debye length average
+        label nCells_;
 public:
 
     //- Runtime type information
@@ -134,6 +137,9 @@ public:
 
         //- Return non-const access to the owner CoulombCollision object
         inline Foam::CoulombCollisionModel<CloudType>& coulombCollisionModel();
+
+        //- Return the global cell count
+        inline const label& nCellsGlobal() const;
 
     // Member Functions
 

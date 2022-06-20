@@ -37,3 +37,10 @@ Foam::PairingAlgorithm<CloudType>::coulombCollisionModel()
 {
     return coulombCollisionModel_;
 }
+
+template<class CloudType>
+inline const Foam::label&
+Foam::PairingAlgorithm<CloudType>::nCellsGlobal() const
+{
+    return nCells_;
+}

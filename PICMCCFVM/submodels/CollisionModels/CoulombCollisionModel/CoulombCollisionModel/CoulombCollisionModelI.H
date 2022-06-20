@@ -65,3 +65,27 @@ inline Foam::WeightCorrectionModel<CloudType>&
 Foam::CoulombCollisionModel<CloudType>::weightCorrection() {
     return weightCorrection_();
 }
+
+template<class CloudType>
+inline Foam::scalar&
+Foam::CoulombCollisionModel<CloudType>::average_coulombLog() {
+    return average_coulombLog_;
+}
+
+template<class CloudType>
+inline const Foam::scalar&
+Foam::CoulombCollisionModel<CloudType>::average_coulombLog() const {
+    return average_coulombLog_;
+}
+
+template<class CloudType>
+inline Foam::scalar&
+Foam::CoulombCollisionModel<CloudType>::average_impactParameter() {
+    return average_b_;
+}
+
+template<class CloudType>
+inline const Foam::scalar&
+Foam::CoulombCollisionModel<CloudType>::average_impactParameter() const {
+    return average_b_;
+}

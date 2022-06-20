@@ -39,6 +39,7 @@ SourceFiles
 #include "IOdictionary.H"
 #include "autoPtr.H"
 #include "runTimeSelectionTables.H"
+#include "Switch.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -97,7 +98,20 @@ protected:
         //- Storage of the coulomb logarithm for all species combinations
         List<List<scalar>> coulombLog_; //there are n(n+1)/2 pairs but I think using two list n*n entries results in faster lookup: list[s1][s2]
 
+        //- Calculate the average Coulomb log per time step using this variable
+        scalar average_coulombLog_;
 
+        //- Account for drift in the temperature calculation used for the calculation of the Debye length (default: true)
+        Switch debyeLength_accountForDrift_;
+
+        //- Only consider these species in the calculation of the Debye length
+        List<label> debyeLength_Species_;
+
+        //- Calculate the average impact parameter per time step using this variable
+        scalar average_b_;
+
+        //- Consider b_min in the calculation of the impact parameter (default: true)
+        Switch calculate_bmin_;
 public:
 
     //- Runtime type information
@@ -182,6 +196,18 @@ public:
         //- Return non-const reference to WeightCorrectionModel
         inline const WeightCorrectionModel<CloudType>&
             weightCorrection() const;
+
+        //- Return non-const reference to the average Coulomb log. Used to update the value in child classes.
+        inline scalar& average_coulombLog();
+
+        //- Return const reference to average Coulomb log
+        inline const scalar& average_coulombLog() const;
+
+        //- Return non-const reference to average impact parameter b
+        inline scalar& average_impactParameter();
+
+        //- Return const reference to average impact parameter b
+        inline const scalar& average_impactParameter() const;
 
     // Member Functions
 
