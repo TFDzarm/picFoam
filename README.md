@@ -9,8 +9,7 @@ The solver is developed at ZARM (Center of Applied Space Technology and Microgra
 
 # Instructions
 
-This branch of picFoam requires [OpenFOAM version 9](https://github.com/OpenFOAM/OpenFOAM-9).
-WARNING: The branch wasn't tested thoroughly, but should work just fine.
+picFoam requires [OpenFOAM version 9](https://github.com/OpenFOAM/OpenFOAM-9).
 
 Detailed installation instructions for OpenFOAM can be found [here](https://openfoam.org/download/source/).
 
