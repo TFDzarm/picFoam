@@ -71,6 +71,15 @@ public:
 
         //- Ininitalize ...
         virtual void initialiseParticles();
+
+        virtual bool calculateNumberDensities()
+        {
+            return false;
+        }
+        virtual bool calculateTemperatures()
+        {
+            return false;
+        }
 };
 
 
