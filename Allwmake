@@ -22,4 +22,6 @@ wmake solver/picFoam
 wmakeLnInclude preProcess/picInitialise
 wmake preProcess/picInitialise
 
+wmake postProcess/functionObjects
+
 #------------------------------------------------------------------------------

@@ -1,0 +1,3 @@
+picFields/picFields.C
+
+LIB = $(FOAM_USER_LIBBIN)/libpicFunctionObjects
