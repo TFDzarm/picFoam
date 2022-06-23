@@ -131,7 +131,7 @@ bool Foam::functionObjects::picFields::write()
             "fD"+ext+"Mean"
         );
 
-        if (min(mag(rhoNMean)).value() > vSmall)
+        if (min(mag(rhoNMean)).value() > vSmall && min(mag(linearKEMean)).value() > vSmall)
         {
             Info<< "Calculating picFields" << ext << '.' << endl;
 
@@ -159,7 +159,6 @@ bool Foam::functionObjects::picFields::write()
                     obr_,
                     IOobject::NO_READ
                 ),
-
                 2.0/(3.0*physicoChemical::k.value()*rhoNMean)
                *(linearKEMean - 0.5*rhoMMean*(UMean & UMean))
             );
