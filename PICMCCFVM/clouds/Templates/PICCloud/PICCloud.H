@@ -169,6 +169,7 @@ class PICCloud
         volScalarField q_;
 
         //- Force density at surface field
+        PtrList<volVectorField> fDSpecies_;
         volVectorField fD_;
 
         //- Number density fields
@@ -415,6 +416,7 @@ public:
                 inline volScalarField::Boundary& qBF();
 
                //- Return non-const force density at boundary field reference
+               inline volVectorField::Boundary& fDSpeciesBF(label fieldIndex);
                inline volVectorField::Boundary& fDBF();
 
                 //- Return non-const number density boundary field reference

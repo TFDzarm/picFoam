@@ -331,6 +331,8 @@ void Foam::PICParcel<ParcelType>::wallReflection
     cloud.qBF()[wppIndex][wppLocalFace] += deltaQ;
 
     cloud.fDBF()[wppIndex][wppLocalFace] += deltaFD;
+    if(fieldIndex >= 0)
+        cloud.fDSpeciesBF(fieldIndex)[wppIndex][wppLocalFace] += deltaFD;
 
     //requireResync!
     td.requireResync() = true;
@@ -418,6 +420,8 @@ void Foam::PICParcel<ParcelType>::wallAbsorption
     vector deltaFD = nParticle_*(m*U_)/(deltaT*fA);
     cloud.qBF()[wppIndex][wppLocalFace] += deltaQ;
     cloud.fDBF()[wppIndex][wppLocalFace] += deltaFD;
+    if(fieldIndex >= 0)
+        cloud.fDSpeciesBF(fieldIndex)[wppIndex][wppLocalFace] += deltaFD;
     //cloud.jBF()[wppIndex][wppLocalFace] += nParticle_*charge_*U_/fA;
 
     // -------- WallAbsorption --------

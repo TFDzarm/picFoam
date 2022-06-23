@@ -173,6 +173,7 @@ void Foam::PICCloud<ParcelType>::buildConstProps()
         rhoMSpecies_.setSize(index);
         rhoChargeSpecies_.setSize(index);
         jSpecies_.setSize(index);
+        fDSpecies_.setSize(index);
 
         for(label fieldId = 0; fieldId < index; fieldId++)
         {
@@ -293,6 +294,22 @@ void Foam::PICCloud<ParcelType>::buildConstProps()
                mesh_,
                dimensionedVector("zero",  dimensionSet(0, -2, 0, 0, 0,1,0), Zero),
                calculatedFvPatchScalarField::typeName
+           ));
+
+           fDSpecies_.set(fieldId,
+           new volVectorField
+           (
+               IOobject
+               (
+                   "fD:"+species,
+                   mesh_.time().timeName(),
+                   mesh_,
+                   IOobject::NO_READ,
+                   IOobject::AUTO_WRITE
+               ),
+               mesh_,
+               dimensionedVector("zero",  dimensionSet(1, -1, -2, 0, 0), Zero),
+               calculatedFvPatchVectorField::typeName
            ));
 
         }
@@ -556,6 +573,7 @@ void Foam::PICCloud<ParcelType>::resetFields()
         rhoMSpecies_[i] = dimensionedScalar("zero",dimensionSet(1, -3, 0, 0, 0),0.0);
         momentumSpecies_[i] = dimensionedVector("zero",dimensionSet(1, -2, -1, 0, 0),Zero);
         linearKESpecies_[i] = dimensionedScalar("zero",dimensionSet(1, -1, -2, 0, 0),0.0);
+        fDSpecies_[i] = dimensionedVector("zero",dimensionSet(1, -1, -2, 0, 0),Zero);
     }
     //Do not reset j_ and rhoCharge_!!! This is done in calculateFields()
 }
@@ -756,6 +774,7 @@ Foam::PICCloud<ParcelType>::PICCloud
         ),
         mesh_
     ),
+    fDSpecies_(),
     fD_
     (
         IOobject
@@ -1034,6 +1053,7 @@ Foam::PICCloud<ParcelType>::PICCloud
         mesh_,
         dimensionedScalar( dimensionSet(1, 0, -3, 0, 0), 0)
     ),
+    fDSpecies_(),
     fD_
     (
         IOobject

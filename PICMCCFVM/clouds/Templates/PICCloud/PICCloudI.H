@@ -148,6 +148,12 @@ Foam::PICCloud<ParcelType>::qBF()
     return q_.boundaryFieldRef();
 }
 
+template<class ParcelType>
+inline Foam::volVectorField::Boundary&
+Foam::PICCloud<ParcelType>::fDSpeciesBF(label fieldIndex)
+{
+    return fDSpecies_[fieldIndex].boundaryFieldRef();
+}
 
 template<class ParcelType>
 inline Foam::volVectorField::Boundary&
