@@ -82,6 +82,12 @@ Foam::PerezIonizationModel<CloudType>::PerezIonizationModel
             scalarList bindingEnergy = subDict.lookup("bindingEnergy");
             scalarList ionizationEnergy = subDict.lookup("ionizationEnergy");
 
+            if(bindingEnergy.size() != atomicNumber)
+                FatalErrorInFunction << "Number of entries in list \"bindingEnergy\" (" << bindingEnergy.size() << ") does not match the atomic number " << atomicNumber << "." << abort(FatalError);
+
+            if(ionizationEnergy.size() != atomicNumber)
+                FatalErrorInFunction << "Number of entries in list \"ionizationEnergy\" (" << ionizationEnergy.size() << ") does not match the atomic number " << atomicNumber << "." << abort(FatalError);
+
             ionizationData_[idIon].dictonaryName_ = iter().keyword();
             ionizationData_[idIon].ionSpecies_ = idIon;
             ionizationData_[idIon].atomicNumber_ = atomicNumber;
