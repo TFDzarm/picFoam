@@ -302,11 +302,19 @@ void Foam::NanbuYonemuraPairing<CloudType>::pairANDcollide()
     reduce(average_DebyeLength, sumOp<scalar>());
     reduce(this->coulombCollisionModel().average_impactParameter(), sumOp<scalar>());
     reduce(this->coulombCollisionModel().average_coulombLog(), sumOp<scalar>());
-    Info << "    Coulomb Collisions              = " << coulombCollisions << nl
-         << "    Ionizations                     = " << ionizations << nl
-         << "    Average Debye length            = " << average_DebyeLength/this->nCellsGlobal() << nl
-         << "    Average b0                      = " << this->coulombCollisionModel().average_impactParameter()/coulombCollisions << nl
-         << "    Average Coulomb logarithm       = " << this->coulombCollisionModel().average_coulombLog()/coulombCollisions << nl << endl;
+
+    if (coulombCollisions)
+    {
+        Info << "    Coulomb Collisions              = " << coulombCollisions << nl
+             << "    Ionizations                     = " << ionizations << nl
+             << "    Average Debye length            = " << average_DebyeLength/this->nCellsGlobal() << nl
+             << "    Average b0                      = " << this->coulombCollisionModel().average_impactParameter()/coulombCollisions << nl
+             << "    Average Coulomb logarithm       = " << this->coulombCollisionModel().average_coulombLog()/coulombCollisions << nl << endl;
+    }
+    else
+    {
+        Info<< "    No Coulomb collisions" << nl << endl;
+    }
 
     //Reset
     this->coulombCollisionModel().average_coulombLog() = 0.0;
