@@ -135,7 +135,7 @@ Foam::CoulombCollisionModel<CloudType>::CoulombCollisionModel
 
     //Check if we calculate the species temperatures while accounting for the drift velocity
     debyeLength_accountForDrift_.readIfPresent("accountForDrift",debyeLengthdict);
-    if(debyeLength_accountForDrift_)
+    if(!debyeLength_accountForDrift_)
         Info << "|->    Do not incorporate dirft velocities in Debye length calculation" << endl;
     else
         Info << "|->    Incorporate the drift velocities in Debye length calculation" << endl;
