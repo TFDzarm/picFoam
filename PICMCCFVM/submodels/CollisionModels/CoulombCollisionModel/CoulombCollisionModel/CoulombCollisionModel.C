@@ -163,10 +163,13 @@ Foam::CoulombCollisionModel<CloudType>::CoulombCollisionModel
             if(p1 < 0 || p2 < 0)
                 FatalErrorInFunction << "Unable to find the typeId of one or both species in pair (" << cP[0] << " " << cP[1] << ")" << nl << abort(FatalError);
 
+            if(owner.constProps(p1).charge() == 0.0 || owner.constProps(p2).charge() == 0.0)
+                FatalErrorInFunction << "Collision between species " << cP[0] << " and " << cP[1] << " is not a Coulomb collision" << nl << abort(FatalError);
+
             scalar cLog = readScalar(subDict.lookup("coulombLog"));
             if(coulombLog_[p1][p2] != 0 && coulombLog_[p1][p2] != cLog)
             {
-                FatalErrorInFunction << "Ambiguous definition for the coulombLog of species" << cP[0] << " and species " << cP[1] << " (" << coulombLog_[p1][p2] << " and " << cLog << ")" << abort(FatalError);
+                FatalErrorInFunction << "Ambiguous definition for the coulombLog of species " << cP[0] << " and species " << cP[1] << " (" << coulombLog_[p1][p2] << " and " << cLog << ")" << abort(FatalError);
             }
             else if(coulombLog_[p1][p2] == cLog)
                 continue;
@@ -176,13 +179,21 @@ Foam::CoulombCollisionModel<CloudType>::CoulombCollisionModel
             if(coulombLog_[p1][p2] > 0.0)
             {
                 fixedCoulombLog++;
-                Info << "    CoulombCollisionModel: Using fixed coulombLog=" << coulombLog_[p1][p2] << " for the collisions of species " << cP[0] << " and species " << cP[1] << endl;
+                Info << "|->    Using fixed coulombLog = " << coulombLog_[p1][p2] << " for the collisions of species " << cP[0] << " and species " << cP[1] << endl;
             }
         }
     }
+
+    //Use all charged species instead of debyeLength_Species_(may be not all charged species),
+    //so we still calculate the Debye length for species where no Coulomb logarithm is provided
+    label nChargedSpecies = owner.chargedSpecies().size();
+
     //If the user provided a logarithm for all possible collisions no calculations need to be done
-    if(fixedCoulombLog == nSpecies*(nSpecies+1)/2)
+    if(fixedCoulombLog == nChargedSpecies*(nChargedSpecies+1)/2)
+    {
         calculateDebyeLength_ = false;
+        Info << "|->    Provided a coulomb logarithm for every possible collision of charged species. Skipping calculation of Debye length" << endl;
+    }
 }
 
 
