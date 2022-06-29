@@ -38,6 +38,8 @@ License
 #include "ChargeInfo.H"
 #include "CellOccupancyInfo.H"
 #include "IsotropizationInfo.H"
+#include "DebyeLengthInfo.H"
+#include "PlasmaFrequencyInfo.H"
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
@@ -61,6 +63,8 @@ namespace Foam
     makeDiagnosticInfoType(ChargeInfo, CloudType);
     makeDiagnosticInfoType(CellOccupancyInfo, CloudType);
     makeDiagnosticInfoType(IsotropizationInfo, CloudType);
+    makeDiagnosticInfoType(DebyeLengthInfo, CloudType);
+    makeDiagnosticInfoType(PlasmaFrequencyInfo, CloudType);
 }
 
 // ************************************************************************* //
