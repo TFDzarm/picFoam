@@ -27,9 +27,6 @@ SolverSettings
 
     spaceCharge                     0;//[As] space charge to be uniformly distributed
 
-    checkDebyeLength                false;//Print a message if the cell is larger than the Debye length
-    checkPlasmaFrequency            false;//Print a message if the time step is larger than the plasma frequency
-
     warnCellTrajectory              0.5;//Warn once every time step if a particle moves further than x of the cell length (there may even be faster particles)
 
 }

@@ -27,9 +27,6 @@ SolverSettings
 
     spaceCharge     0;
 
-    checkDebyeLength false;
-    checkPlasmaFrequency false;
-
     warnCellTrajectory 0.9;
 
     ChargeDistribution VolumeWeighting;

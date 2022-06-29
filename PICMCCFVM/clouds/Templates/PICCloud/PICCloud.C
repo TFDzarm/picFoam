@@ -922,11 +922,8 @@ Foam::PICCloud<ParcelType>::PICCloud
         dimensionedScalar("zero",  dimensionSet(0, -3, 1, 0, 0,1,0), Zero)
     ),
     cellLengthScale_(mesh_.nCells(),0.0),
-    avgcellLengthScale_(0.0),
     printVelocityWarning_(true),
     syncVelocityAtBoundary_(particleProperties_.subDict("SolverSettings").lookupOrDefault<bool>("syncVelocityAtBoundary",true)),
-    checkDebyeLength_(readBool(particleProperties_.subDict("SolverSettings").lookup("checkDebyeLength"))),
-    checkPlasmaFrequency_(readBool(particleProperties_.subDict("SolverSettings").lookup("checkPlasmaFrequency"))),
     warnCellTrajectory_(readScalar(particleProperties_.subDict("SolverSettings").lookup("warnCellTrajectory"))),
     isInitializing_(false),
     picInitialiseDict_(dictionary::null),
@@ -1217,11 +1214,8 @@ Foam::PICCloud<ParcelType>::PICCloud
         dimensionedScalar("zero",  dimensionSet(0, -3, 1, 0, 0,1,0), Zero)
     ),
     cellLengthScale_(mesh_.nCells(),0.0),
-    avgcellLengthScale_(0.0),
     printVelocityWarning_(true),
     syncVelocityAtBoundary_(particleProperties_.subDict("SolverSettings").lookupOrDefault<bool>("syncVelocityAtBoundary",true)),
-    checkDebyeLength_(readBool(particleProperties_.subDict("SolverSettings").lookup("checkDebyeLength"))),
-    checkPlasmaFrequency_(readBool(particleProperties_.subDict("SolverSettings").lookup("checkPlasmaFrequency"))),
     warnCellTrajectory_(readScalar(particleProperties_.subDict("SolverSettings").lookup("warnCellTrajectory"))),
     isInitializing_(true),
     picInitialiseDict_(picInitialiseDict),
@@ -1393,13 +1387,6 @@ void Foam::PICCloud<ParcelType>::calculateCellLengthScales()
                 }
         }
     }
-    //Calculate an average length scale and communicate for parallel runs
-    avgcellLengthScale_ = average(cellLengthScale_);
-    if(Pstream::parRun())
-    {
-        reduce(avgcellLengthScale_,sumOp<scalar>());
-        avgcellLengthScale_ /= Pstream::nProcs();
-    }
 }
 
 /*
@@ -1483,7 +1470,6 @@ void Foam::PICCloud<ParcelType>::evolve()
     particleMerging().checkAndMerge();
 }
 
-
 /*
 Foam::PICCloud<ParcelType>::info()
 
@@ -1509,53 +1495,6 @@ void Foam::PICCloud<ParcelType>::info()
     //If we have parcels print diagnostics.
     if(nPICParticles)
         Diagnostics().info();
-
-    //During the simulation, if required warn if the cell is larger than the average debye length.
-    if(checkDebyeLength_ && !isInitializing())
-    {
-        //Calculate the debye length.
-        tmp<volScalarField::Internal> debye = debyeField();
-
-        //Get the average value.
-        scalar avgDebyeL = average(debye.ref().field());
-        if(Pstream::parRun())
-        {
-            //Average over all processor in a parallel run.
-            reduce(avgDebyeL,sumOp<scalar>());
-            avgDebyeL /= Pstream::nProcs();
-        }
-
-        Info << "    Average cell size: " << avgcellLengthScale_ << " m^-3" << nl
-             << "    Average debye length: " << avgDebyeL << " m^-3" << endl;
-        if(avgcellLengthScale_ > avgDebyeL)
-        {
-            Info << "    => Average cell size is larger than the average debye length!" << endl;
-        }
-        //Write the debye field if it's time for this.
-        if (this->db().time().writeTime())
-            debye.ref().write();
-    }
-    
-    //During the simulation, if required warn if the time step is to big for the current plasma frequency.
-    if(checkPlasmaFrequency_ && !isInitializing())
-    {
-        //Calculate the plasma frequency.
-        tmp<volScalarField::Internal> plasmaFreq = plasmaFreqField();
-
-        //Get the average...
-        scalar avgPlasmaFreq = average(plasmaFreq.ref().field());
-        if(Pstream::parRun())
-        {
-            //Average over all processor in parallel run.
-            reduce(avgPlasmaFreq,sumOp<scalar>());
-            avgPlasmaFreq /= Pstream::nProcs();
-        }
-        Info << "    Average plasma frequency: " << avgPlasmaFreq  << " Hz" << endl;
-        if(avgPlasmaFreq*mesh_.time().deltaTValue() > 2.0)
-        {
-            Info << "    => Average plasma frequency times deltaT is larger than 2." << endl;
-        }
-    }
 }
 
 /*
@@ -1616,115 +1555,6 @@ void Foam::PICCloud<ParcelType>::autoMap(const mapPolyMesh& mapper)
     //Usage of dynamic meshes is not supported
     FatalErrorInFunction << "Dynamic meshes are not supported" << abort(FatalError);
     //Cloud<ParcelType>::autoMap(mapper);
-}
-
-/*
-Foam::PICCloud<ParcelType>::plasmaFreqField()
-Calculate the plasma frequency
-*/
-template<class ParcelType>
-tmp<volScalarField::Internal> Foam::PICCloud<ParcelType>::plasmaFreqField() const
-{
-   tmp<volScalarField::Internal> tplasmaFrequency(
-       volScalarField::Internal::New
-       (
-            "plasmaFrequency",
-             mesh_,
-             dimensionedScalar("zero",  dimless/dimTime, 0.0)
-       ));
-
-   Field<scalar>& plasmaFrequency = tplasmaFrequency.ref().field();
-   const typename ParcelType::constantProperties& cP = constProps(electronTypeId_);
-   const List<List<DynamicList<ParcelType*>>>& sortedCellOccupancy(this->sortedCellOccupancy());
-
-   //Go through all cells...
-   forAll(mesh_.cells(),celli)
-   {
-       //Does not include new ionized parcels if called after collision...
-       forAll(sortedCellOccupancy[celli][electronTypeId_],parti)//Only electrons...
-       {
-           ParcelType* p = sortedCellOccupancy[celli][electronTypeId_][parti];
-           if(p == nullptr)//sortedCellOccupancy wasn't re-evaluated some parcels are removed e.g. by ionization code.
-               continue;
-           plasmaFrequency[celli] += p->nParticle();//Add the parcel weight.
-       }
-       plasmaFrequency[celli] /= mesh_.cellVolumes()[celli];//Divide by the volume => Get the number density.
-   }
-   plasmaFrequency = sqrt(plasmaFrequency*cP.charge()*cP.charge()/constant::electromagnetic::epsilon0.value()/cP.mass());//Calculate the plasma frequency
-   return tplasmaFrequency;
-}
-
-/*
-Foam::PICCloud<ParcelType>::debyeField()
-Calculate the field containing the Debye length for each cell.
-*/
-template<class ParcelType>
-tmp<volScalarField::Internal> Foam::PICCloud<ParcelType>::debyeField() const
-{
-    tmp<volScalarField::Internal> tdebyeField(
-      volScalarField::Internal::New
-      (
-          "debyeLength",
-           mesh_,
-           dimensionedScalar("zero",  dimLength, 0.0)
-      ));
-
-      volScalarField::Internal& debyeField = tdebyeField.ref();
-
-        const List<List<DynamicList<ParcelType*>>>& sortedCellOccupancy(this->sortedCellOccupancy());
-        //For all cells...
-        forAll(mesh_.cells(),celli)
-        {
-            scalar debye(0.0);
-            //For all charged species...
-            forAll(chargedSpecies(),si)
-            {
-                scalar  T(0.0), n(0.0);
-                label speci = chargedSpecies()[si];
-                scalar mass = constProps(speci).mass();
-
-                scalar charge = 0.0;
-                scalar vSqr = 0.0;
-                vector v = Zero;
-
-                //Does not include new ionized parcels if called after collision...
-                forAll(sortedCellOccupancy[celli][speci],parti)
-                {
-                    ParcelType* p = sortedCellOccupancy[celli][speci][parti];
-                    if(p == nullptr)//ignore removed parcels
-                        continue;
-
-                    vSqr += (p->U() & p->U())*p->nParticle();
-                    charge += p->charge()*p->nParticle();
-                    v += p->U()*p->nParticle();
-                    n += p->nParticle();
-                }
-                if(n <= 0.0) {
-                    continue;
-                }
-                //Average velocity (drift velocity).
-                v /= n;
-                //Average charge.
-                charge /= n;
-                //Calculate the average squared velocity.
-                vSqr /= n;
-                //Number density of the species.
-                n /= mesh().cellVolumes()[celli];
-
-                //Calculate the temperature based on the Maxwell-Boltzmann distribution.
-                T = mass/(3.0*constant::physicoChemical::k.value())*(vSqr-(v&v));
-
-                if(T <= 0.0) {
-                    continue;
-                }
-
-                //Calculate the Debye length.
-                debye += n*charge*charge/constant::electromagnetic::epsilon0.value() * 1.0/(T*constant::physicoChemical::k.value());
-            }
-            if(debye > 0.0)//If we have a valid value update the cell value of the field.
-                debyeField[celli] = ::sqrt(1/debye);
-        }
-        return tdebyeField;
 }
 
 // ************************************************************************* //

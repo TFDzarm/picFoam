@@ -755,12 +755,6 @@ Foam::PICCloud<ParcelType>::cellLengthScale() const
 }
 
 template<class ParcelType>
-inline const Foam::scalar& Foam::PICCloud<ParcelType>::avgCellLengthScale() const
-{
-    return avgcellLengthScale_;
-}
-
-template<class ParcelType>
 inline bool& Foam::PICCloud<ParcelType>::printVelocityWarning()
 {
     return printVelocityWarning_;

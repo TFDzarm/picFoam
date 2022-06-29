@@ -219,19 +219,12 @@ class PICCloud
 
         //Cell length scales
         scalarField cellLengthScale_;
-        scalar avgcellLengthScale_;
 
         //Used to suppress the printing of multiple warings per thread
         bool printVelocityWarning_;
 
         //Synchronise leap frog velocity on boundary collision (default=true)
         bool syncVelocityAtBoundary_;
-
-        //Check cell size against debye length every timestep
-        bool checkDebyeLength_;
-
-        //Check dt against plasma frequency every timestep
-        bool checkPlasmaFrequency_;
 
         //Warn if particle moved more then this portion of the cell length scale
         scalar warnCellTrajectory_;
@@ -363,12 +356,6 @@ public:
 
                 //- Return references to the mesh
                 inline const fvMesh& mesh() const;
-
-                //- Calculate debye length field
-                tmp<volScalarField::Internal> debyeField() const;
-
-                //- Calculate plasma frequency field
-                tmp<volScalarField::Internal> plasmaFreqField() const;
 
                 //- Return particle properties dictionary
                 inline const IOdictionary& particleProperties() const;
@@ -512,7 +499,6 @@ public:
 
                //- Return the cell length scales
                inline const scalarField& cellLengthScale() const;
-               inline const scalar& avgCellLengthScale() const;
 
                //- Do we still print a waring in this thead?
                inline bool& printVelocityWarning();

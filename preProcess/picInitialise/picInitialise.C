@@ -270,10 +270,11 @@ int main(int argc, char *argv[])
     if(debyeLength > 0.0)
         debyeLength = ::sqrt(1.0/debyeLength);
 
-    Info << "Average cell size:" << "\n    " << pic.avgCellLengthScale() << " m" << nl
+    scalar gAverageCellSize = gAverage(pic.cellLengthScale());
+    Info << "Average cell size:" << "\n    " <<  gAverageCellSize << " m" << nl
          << "Debye length:" << "\n    " << debyeLength << " m" << endl;
 
-    if(pic.avgCellLengthScale() > debyeLength)
+    if(gAverageCellSize > debyeLength)
         Info << "    WARNING!!! Average cell size is larger than the debye length" << endl;
 
     if(pic.electronTypeId() > -1)

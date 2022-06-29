@@ -23,8 +23,6 @@ SolverSettings
     FieldWeigthing  CellAverage;
     spaceCharge     0;
     syncVelocityAtBoundary true;
-    checkDebyeLength false;
-    checkPlasmaFrequency false;
     warnCellTrajectory 0.3;
 }
 
