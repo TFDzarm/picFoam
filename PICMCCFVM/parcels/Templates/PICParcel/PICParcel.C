@@ -43,7 +43,7 @@ bool Foam::PICParcel<ParcelType>::move
 )
 {
     //reset td
-    td.switchProcessor = false;
+    td.sendToProc = -1;
     td.keepParticle = true;
 
     //should the parcel move?
@@ -114,7 +114,7 @@ void Foam::PICParcel<ParcelType>::moveForward
     }
 
     label resyncCount = 0;
-    while (td.keepParticle && !td.switchProcessor && p.stepFraction() < 1)
+    while (td.keepParticle && td.sendToProc == -1 && p.stepFraction() < 1)
     {
         Utracking = U_;
 
@@ -182,33 +182,6 @@ bool Foam::PICParcel<ParcelType>::hitPatch(TrackCloudType& cloud, trackingData& 
 
     return hitPatch;
 }
-
-/*
-Foam::PICParcel<ParcelType>::hitProcessorPatch called by the base class
-
-Set td so the base class will perform a parallel communication
-*/
-template<class ParcelType>
-template<class TrackCloudType>
-void Foam::PICParcel<ParcelType>::hitProcessorPatch
-(
-    TrackCloudType&,
-    trackingData& td
-)
-{
-    td.switchProcessor = true;
-}
-/*
-template<class ParcelType>
-template<class TrackCloudType>
-void Foam::PICParcel<ParcelType>::hitSymmetryPatch(TrackCloudType&, trackingData& td)
-{
-    td.requireResync() = true;
-    const vector nf = this->normal();
-    transformProperties(I - 2.0*nf*nf);
-    //ParcelType::hitSymmetryPatch(TrackCloudType& cloud, trackingData& td);
-}*/
-
 
 /*
 Foam::PICParcel<ParcelType>::syncVelocityAtBoundary

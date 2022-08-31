@@ -74,7 +74,7 @@ Foam::VolumeWeighting<CloudType>::VolumeWeighting
     (
         sumWeights,
         plusEqOp<scalar>(),
-        mapDistribute::transform()
+        distributionMap::transform()
     );
 
     //Calculate the weight
@@ -142,7 +142,7 @@ void Foam::VolumeWeighting<CloudType>::update()
     (
         vertexData_,
         plusEqOp<scalar>(),
-        mapDistribute::transform()
+        distributionMap::transform()
     );
 
     const scalarField& cellVolume = this->cloud().mesh().cellVolumes();

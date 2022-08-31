@@ -96,6 +96,9 @@ public:
         //- Read the picFields data
         virtual bool read(const dictionary&);
 
+        //- Return the list of fields required
+        virtual wordList fields() const;
+
         //- Do not evaluate the state at the start of the run
         virtual bool executeAtStart() const
         {

@@ -93,6 +93,25 @@ bool Foam::functionObjects::picFields::read(const dictionary& dict)
     return true;
 }
 
+Foam::wordList Foam::functionObjects::picFields::fields() const
+{
+    DynamicList<word> dynList;
+
+    forAll(typeIdList_, j)
+    {
+        word ext = typeIdList_[j];
+        dynList.append("rhoN"+ext+"Mean");
+        dynList.append("rhoM"+ext+"Mean");
+        dynList.append("momentum"+ext+"Mean");
+        dynList.append("linearKE"+ext+"Mean");
+        dynList.append("fD"+ext+"Mean");
+    }
+
+    wordList list;
+    list.transfer(dynList);
+    return list;
+}
+
 
 bool Foam::functionObjects::picFields::execute()
 {

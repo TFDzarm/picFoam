@@ -340,18 +340,9 @@ public:
             template<class TrackCloudType>
             bool hitPatch(TrackCloudType&, trackingData&);
 
-            //- Overridable function to handle the particle hitting a
-            //  processorPatch
-            template<class TrackCloudType>
-            void hitProcessorPatch(TrackCloudType&, trackingData&);
-
             //- Overridable function to handle the particle hitting a wallPatch
             template<class TrackCloudType>
             void hitWallPatch(TrackCloudType&, trackingData&);
-
-            //- Overridable function
-            //template<class TrackCloudType>
-            //void hitSymmetryPatch(TrackCloudType&, trackingData&);
 
             //- Transform the physical properties of the particle
             //  according to the given transformation tensor

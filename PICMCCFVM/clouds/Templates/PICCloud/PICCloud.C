@@ -1550,7 +1550,7 @@ void Foam::PICCloud<ParcelType>::dumpParticle() const
 
 
 template<class ParcelType>
-void Foam::PICCloud<ParcelType>::autoMap(const mapPolyMesh& mapper)
+void Foam::PICCloud<ParcelType>::autoMap(const polyTopoChangeMap& mapper)
 {
     //Usage of dynamic meshes is not supported
     FatalErrorInFunction << "Dynamic meshes are not supported" << abort(FatalError);

@@ -9,7 +9,7 @@ The solver is developed at ZARM (Center of Applied Space Technology and Microgra
 
 # Instructions
 
-picFoam requires [OpenFOAM version 9](https://github.com/OpenFOAM/OpenFOAM-9).
+picFoam requires [OpenFOAM version 10](https://github.com/OpenFOAM/OpenFOAM-10).
 
 Detailed installation instructions for OpenFOAM can be found [here](https://openfoam.org/download/source/).
 
@@ -17,7 +17,7 @@ Detailed installation instructions for OpenFOAM can be found [here](https://open
 
 Summery of the OpenFOAM installtion (link above):
 
-1. Compiler: GCC version > 4.8 or above; or LLVM Clang version > 3.6 or above; or Intel ICC version > 17.0.4 or above
+1. Compiler: GCC version > 5.4 or above; or LLVM Clang version > 3.6 or above; or Intel ICC version > 17.0.4 or above
 2. Package dependencies (for Ubuntu version 18.04 or above):
 
        OpenFOAM:
@@ -48,15 +48,15 @@ Summery of the OpenFOAM installtion (link above):
         curl
 
 3. Clone OpenFOAM repositories (recommended installation directory $HOME/OpenFOAM):
-    git clone https://github.com/OpenFOAM/OpenFOAM-9.git
-    git clone https://github.com/OpenFOAM/ThirdParty-9.git
+    git clone https://github.com/OpenFOAM/OpenFOAM-10.git
+    git clone https://github.com/OpenFOAM/ThirdParty-10.git
 
 4. Set the environment variables:
-    source $HOME/OpenFOAM/OpenFOAM-9/etc/bashrc
+    source $HOME/OpenFOAM/OpenFOAM-10/etc/bashrc
 
-5. Compile Scotch/PT-Scotch: Run the **Allwmake** script in $HOME/OpenFOAM/ThirdParty-9
-6. Compile OpenFOAM: Run the **Allwmake** script in $HOME/OpenFOAM/OpenFOAM-9
-7. Compile ParaView: Run the **makeParaView** script in $HOME/OpenFOAM/ThirdParty-9
+5. Compile Scotch/PT-Scotch: Run the **Allwmake** script in $HOME/OpenFOAM/ThirdParty-10
+6. Compile OpenFOAM: Run the **Allwmake** script in $HOME/OpenFOAM/OpenFOAM-10
+7. Compile ParaView: Run the **makeParaView** script in $HOME/OpenFOAM/ThirdParty-10
 
 ## picFoam installation
 

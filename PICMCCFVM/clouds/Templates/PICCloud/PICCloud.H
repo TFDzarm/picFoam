@@ -749,7 +749,7 @@ public:
 
             //- Remap the particles to the correct cells following mesh change
             // NOT IMPLEMENTED!
-            virtual void autoMap(const mapPolyMesh&);
+            virtual void autoMap(const polyTopoChangeMap&);
 };
 
 
