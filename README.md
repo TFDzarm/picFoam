@@ -11,13 +11,15 @@ The solver is developed at ZARM (Center of Applied Space Technology and Microgra
 
 picFoam requires [OpenFOAM version 9](https://github.com/OpenFOAM/OpenFOAM-9).
 
+For OpenFOAM version 10 checkout the branch openfoam-v10 (Note: The branch was tested for compilation only!)
+
 Detailed installation instructions for OpenFOAM can be found [here](https://openfoam.org/download/source/).
 
 ## OpenFOAM installation
 
 Summery of the OpenFOAM installtion (link above):
 
-1. Compiler: GCC version > 4.8 or above; or LLVM Clang version > 3.6 or above; or Intel ICC version > 17.0.4 or above
+1. Compiler: GCC version > 5.4 or above; or LLVM Clang version > 3.6 or above; or Intel ICC version > 17.0.4 or above
 2. Package dependencies (for Ubuntu version 18.04 or above):
 
        OpenFOAM:
