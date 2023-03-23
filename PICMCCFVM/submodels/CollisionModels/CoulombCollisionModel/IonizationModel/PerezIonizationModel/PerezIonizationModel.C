@@ -223,6 +223,12 @@ void Foam::PerezIonizationModel<CloudType>::prepareIonization(typename CloudType
         performIonization_ = false;
         return;
     }
+
+    if(nei_ <= 0.0) {
+        performIonization_ = false;
+        return;
+    }
+    
     performIonization_ = true;
 }
 
